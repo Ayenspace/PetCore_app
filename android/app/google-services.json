@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "360768034609",
+    "project_id": "petcore-5ddcf",
+    "storage_bucket": "petcore-5ddcf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:360768034609:android:7d9aa0725ba0f3f24a8210",
+        "android_client_info": {
+          "package_name": "com.example.petcore_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBHbe8k2bwrweJ2oNQBzH9sFw1nsG5A27I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
