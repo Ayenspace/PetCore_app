@@ -25,8 +25,15 @@ class AppAuthProvider extends ChangeNotifier {
         _status = AuthStatus.unauthenticated;
         _user = null;
       } else {
-        _user = await _service.getUser(firebaseUser.uid);
-        _status = AuthStatus.authenticated;
+        try {
+          _user = await _service.getUser(firebaseUser.uid);
+          _status = AuthStatus.authenticated;
+        } catch (e) {
+          // DB record missing, sign out to avoid broken state
+          await _service.logout();
+          _status = AuthStatus.unauthenticated;
+          _user = null;
+        }
       }
       notifyListeners();
     });
@@ -108,12 +115,15 @@ class AppAuthProvider extends ChangeNotifier {
   }
 
   String _parseError(dynamic e) {
-    if (e.toString().contains('user-not-found')) return 'No account found with this email.';
-    if (e.toString().contains('wrong-password')) return 'Incorrect password.';
-    if (e.toString().contains('email-already-in-use')) return 'An account already exists with this email.';
-    if (e.toString().contains('weak-password')) return 'Password is too weak.';
-    if (e.toString().contains('invalid-email')) return 'Invalid email address.';
-    if (e.toString().contains('network-request-failed')) return 'No internet connection.';
-    return 'Something went wrong. Please try again.';
+    final msg = e.toString().toLowerCase();
+    if (msg.contains('user-not-found') || msg.contains('no user record')) return 'No account found with this email.';
+    if (msg.contains('wrong-password') || msg.contains('invalid-credential') || msg.contains('invalid credential')) return 'Incorrect email or password.';
+    if (msg.contains('email-already-in-use')) return 'An account already exists with this email.';
+    if (msg.contains('weak-password')) return 'Password is too weak. Use at least 6 characters.';
+    if (msg.contains('invalid-email')) return 'Invalid email address.';
+    if (msg.contains('network-request-failed') || msg.contains('network')) return 'No internet connection.';
+    if (msg.contains('too-many-requests')) return 'Too many attempts. Please try again later.';
+    if (msg.contains('permission-denied')) return 'Database permission denied. Check Firebase rules.';
+    return 'Something went wrong: ${e.toString()}';
   }
 }

@@ -40,8 +40,26 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    await _auth.signInWithEmailAndPassword(email: email, password: password);
-    return await getUser(_auth.currentUser!.uid);
+    final credential = await _auth.signInWithEmailAndPassword(email: email, password: password);
+    final uid = credential.user!.uid;
+    final snapshot = await _userRef(uid).get();
+    if (!snapshot.exists || snapshot.value == null) {
+      // User exists in Auth but not in DB — create a basic record
+      final user = UserModel(
+        id: uid,
+        name: credential.user!.email!.split('@').first,
+        email: credential.user!.email!,
+        role: UserRole.petOwner,
+        createdAt: DateTime.now(),
+      );
+      await _userRef(uid).set(user.toMap());
+      return user;
+    }
+    return UserModel.fromMap(
+      Map<String, dynamic>.from(
+        (snapshot.value as Map).map((k, v) => MapEntry(k.toString(), v)),
+      ),
+    );
   }
 
   Future<void> logout() => _auth.signOut();
@@ -51,7 +69,21 @@ class AuthService {
 
   Future<UserModel> getUser(String uid) async {
     final snapshot = await _userRef(uid).get();
-    return UserModel.fromMap(Map<String, dynamic>.from(snapshot.value as Map));
+    if (!snapshot.exists || snapshot.value == null) {
+      throw Exception('User not found in database');
+    }
+    print('RAW DB VALUE: ${snapshot.value}');
+    print('RAW DB TYPE: ${snapshot.value.runtimeType}');
+    try {
+      final data = Map<String, dynamic>.from(
+        (snapshot.value as Map).map((k, v) => MapEntry(k.toString(), v)),
+      );
+      print('PARSED DATA: $data');
+      return UserModel.fromMap(data);
+    } catch (e) {
+      print('PARSE ERROR: $e');
+      rethrow;
+    }
   }
 
   Future<void> updateUser(UserModel user) =>
