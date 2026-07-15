@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/authentication.dart';
 
+export '../models/user_model.dart' show UserRole;
+
 enum AuthStatus { initial, authenticated, unauthenticated }
 
 class AppAuthProvider extends ChangeNotifier {
@@ -34,10 +36,20 @@ class AppAuthProvider extends ChangeNotifier {
     required String name,
     required String email,
     required String password,
+    required UserRole role,
+    String? clinicName,
+    String? specialization,
   }) async {
     _setLoading(true);
     try {
-      _user = await _service.register(name: name, email: email, password: password);
+      _user = await _service.register(
+        name: name,
+        email: email,
+        password: password,
+        role: role,
+        clinicName: clinicName,
+        specialization: specialization,
+      );
       _status = AuthStatus.authenticated;
       _error = null;
       return true;

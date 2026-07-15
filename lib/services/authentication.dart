@@ -1,18 +1,23 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import '../models/user_model.dart';
 
 class AuthService {
   final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
+  final _db = FirebaseDatabase.instance;
 
   User? get currentUser => _auth.currentUser;
   Stream<User?> get authStateChanges => _auth.authStateChanges();
+
+  DatabaseReference _userRef(String uid) => _db.ref('users/$uid');
 
   Future<UserModel> register({
     required String name,
     required String email,
     required String password,
+    required UserRole role,
+    String? clinicName,
+    String? specialization,
   }) async {
     final credential = await _auth.createUserWithEmailAndPassword(
       email: email,
@@ -22,9 +27,12 @@ class AuthService {
       id: credential.user!.uid,
       name: name,
       email: email,
+      role: role,
+      clinicName: clinicName,
+      specialization: specialization,
       createdAt: DateTime.now(),
     );
-    await _firestore.collection('users').doc(user.id).set(user.toMap());
+    await _userRef(user.id).set(user.toMap());
     return user;
   }
 
@@ -42,10 +50,10 @@ class AuthService {
       _auth.sendPasswordResetEmail(email: email);
 
   Future<UserModel> getUser(String uid) async {
-    final doc = await _firestore.collection('users').doc(uid).get();
-    return UserModel.fromMap(doc.data()!);
+    final snapshot = await _userRef(uid).get();
+    return UserModel.fromMap(Map<String, dynamic>.from(snapshot.value as Map));
   }
 
   Future<void> updateUser(UserModel user) =>
-      _firestore.collection('users').doc(user.id).update(user.toMap());
+      _userRef(user.id).update(user.toMap());
 }

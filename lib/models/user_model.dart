@@ -1,3 +1,5 @@
+enum UserRole { petOwner, vet }
+
 class UserModel {
   final String id;
   final String name;
@@ -6,6 +8,10 @@ class UserModel {
   final String? address;
   final String? bio;
   final String? photoUrl;
+  final UserRole role;
+  final bool isSeller;
+  final String? clinicName;
+  final String? specialization;
   final DateTime createdAt;
 
   UserModel({
@@ -16,8 +22,15 @@ class UserModel {
     this.address,
     this.bio,
     this.photoUrl,
+    required this.role,
+    this.isSeller = false,
+    this.clinicName,
+    this.specialization,
     required this.createdAt,
   });
+
+  bool get isVet => role == UserRole.vet;
+  bool get isPetOwner => role == UserRole.petOwner;
 
   factory UserModel.fromMap(Map<String, dynamic> map) => UserModel(
         id: map['id'],
@@ -27,6 +40,10 @@ class UserModel {
         address: map['address'],
         bio: map['bio'],
         photoUrl: map['photoUrl'],
+        role: UserRole.values.byName(map['role'] ?? 'petOwner'),
+        isSeller: map['isSeller'] ?? false,
+        clinicName: map['clinicName'],
+        specialization: map['specialization'],
         createdAt: DateTime.parse(map['createdAt']),
       );
 
@@ -38,6 +55,10 @@ class UserModel {
         'address': address,
         'bio': bio,
         'photoUrl': photoUrl,
+        'role': role.name,
+        'isSeller': isSeller,
+        'clinicName': clinicName,
+        'specialization': specialization,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -47,6 +68,9 @@ class UserModel {
     String? address,
     String? bio,
     String? photoUrl,
+    bool? isSeller,
+    String? clinicName,
+    String? specialization,
   }) =>
       UserModel(
         id: id,
@@ -56,6 +80,10 @@ class UserModel {
         address: address ?? this.address,
         bio: bio ?? this.bio,
         photoUrl: photoUrl ?? this.photoUrl,
+        role: role,
+        isSeller: isSeller ?? this.isSeller,
+        clinicName: clinicName ?? this.clinicName,
+        specialization: specialization ?? this.specialization,
         createdAt: createdAt,
       );
 }

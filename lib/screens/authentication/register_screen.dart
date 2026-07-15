@@ -15,8 +15,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _clinicController = TextEditingController();
+  final _specializationController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  UserRole _selectedRole = UserRole.petOwner;
 
   @override
   void dispose() {
@@ -24,6 +27,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _clinicController.dispose();
+    _specializationController.dispose();
     super.dispose();
   }
 
@@ -34,6 +39,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
+      role: _selectedRole,
+      clinicName: _selectedRole == UserRole.vet ? _clinicController.text.trim() : null,
+      specialization: _selectedRole == UserRole.vet ? _specializationController.text.trim() : null,
     );
     if (success && mounted) context.go('/home');
   }
@@ -60,31 +68,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 16),
                 Text('Create Account', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 Text('Join PetCore today', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
-                const SizedBox(height: 40),
+                const SizedBox(height: 28),
+
+                // Role selector
+                Text('I am a...', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(child: _RoleCard(
+                      icon: Icons.pets,
+                      label: 'Pet Owner',
+                      selected: _selectedRole == UserRole.petOwner,
+                      onTap: () => setState(() => _selectedRole = UserRole.petOwner),
+                    )),
+                    const SizedBox(width: 12),
+                    Expanded(child: _RoleCard(
+                      icon: Icons.medical_services_outlined,
+                      label: 'Veterinarian',
+                      selected: _selectedRole == UserRole.vet,
+                      onTap: () => setState(() => _selectedRole = UserRole.vet),
+                    )),
+                  ],
+                ),
+                const SizedBox(height: 24),
+
                 TextFormField(
                   controller: _nameController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(
-                    labelText: 'Full Name',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Please enter your name';
-                    return null;
-                  },
+                  decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person_outline)),
+                  validator: (v) => v == null || v.trim().isEmpty ? 'Please enter your name' : null,
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined),
-                  ),
+                  decoration: const InputDecoration(labelText: 'Email', prefixIcon: Icon(Icons.email_outlined)),
                   validator: (v) {
                     if (v == null || v.isEmpty) return 'Please enter your email';
                     if (!v.contains('@')) return 'Enter a valid email';
@@ -127,6 +148,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     return null;
                   },
                 ),
+
+                // Vet-specific fields
+                if (_selectedRole == UserRole.vet) ...[
+                  const SizedBox(height: 20),
+                  Divider(color: Colors.grey.shade300),
+                  const SizedBox(height: 12),
+                  Text('Clinic Information', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.primary)),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _clinicController,
+                    decoration: const InputDecoration(labelText: 'Clinic Name', prefixIcon: Icon(Icons.local_hospital_outlined)),
+                    validator: (v) => _selectedRole == UserRole.vet && (v == null || v.isEmpty) ? 'Please enter your clinic name' : null,
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _specializationController,
+                    decoration: const InputDecoration(labelText: 'Specialization (e.g. General, Surgery)', prefixIcon: Icon(Icons.workspace_premium_outlined)),
+                    validator: (v) => _selectedRole == UserRole.vet && (v == null || v.isEmpty) ? 'Please enter your specialization' : null,
+                  ),
+                ],
+
                 if (auth.error != null) ...[
                   const SizedBox(height: 16),
                   Container(
@@ -166,9 +208,46 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _RoleCard({required this.icon, required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: selected ? theme.colorScheme.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? theme.colorScheme.primary : Colors.grey.shade300,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: selected ? Colors.white : Colors.grey, size: 28),
+            const SizedBox(height: 8),
+            Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: selected ? Colors.white : Colors.grey, fontSize: 13)),
+          ],
         ),
       ),
     );
