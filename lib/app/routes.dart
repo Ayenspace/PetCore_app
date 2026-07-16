@@ -8,6 +8,7 @@ import '../screens/authentication/register_screen.dart';
 import '../screens/authentication/fogort_password_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/pets/pets_screen.dart';
+import '../screens/pets/pet_details_screen.dart';
 import '../screens/appointments/appointments.dart';
 import '../screens/medical/medical_records_screen.dart';
 import '../screens/vaccinations/vaccinations_screen.dart';

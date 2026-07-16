@@ -72,18 +72,10 @@ class AuthService {
     if (!snapshot.exists || snapshot.value == null) {
       throw Exception('User not found in database');
     }
-    print('RAW DB VALUE: ${snapshot.value}');
-    print('RAW DB TYPE: ${snapshot.value.runtimeType}');
-    try {
-      final data = Map<String, dynamic>.from(
-        (snapshot.value as Map).map((k, v) => MapEntry(k.toString(), v)),
-      );
-      print('PARSED DATA: $data');
-      return UserModel.fromMap(data);
-    } catch (e) {
-      print('PARSE ERROR: $e');
-      rethrow;
-    }
+    final data = Map<String, dynamic>.from(
+      (snapshot.value as Map).map((k, v) => MapEntry(k.toString(), v)),
+    );
+    return UserModel.fromMap(data);
   }
 
   Future<void> updateUser(UserModel user) =>

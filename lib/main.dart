@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'app/app.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
+import 'providers/pet_poviders.dart';
 import 'providers/theme_provider.dart';
 
 void main() async {
@@ -15,6 +16,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AppAuthProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => PetProvider()),
       ],
       child: const PetCoreApp(),
     ),
