@@ -51,17 +51,17 @@ class DefaultFirebaseOptions {
     appId: '1:360768034609:android:7d9aa0725ba0f3f24a8210',
     messagingSenderId: '360768034609',
     projectId: 'petcore-5ddcf',
-    storageBucket: 'petcore-5ddcf.firebasestorage.app',
     databaseURL: 'https://petcore-5ddcf-default-rtdb.firebaseio.com',
+    storageBucket: 'petcore-5ddcf.firebasestorage.app',
   );
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyB6upFKHoRYUolPQgSAPYvpkS4j4d0vH7Q',
     appId: '1:360768034609:ios:9d70d9af036c25cb4a8210',
     messagingSenderId: '360768034609',
     projectId: 'petcore-5ddcf',
+    databaseURL: 'https://petcore-5ddcf-default-rtdb.firebaseio.com',
     storageBucket: 'petcore-5ddcf.firebasestorage.app',
     iosBundleId: 'com.example.petcoreApp',
-    databaseURL: 'https://petcore-5ddcf-default-rtdb.firebaseio.com',
   );
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyCGVAh4TqVT2ytwb_QOK0niuguqFNED_uU',
@@ -69,8 +69,8 @@ class DefaultFirebaseOptions {
     messagingSenderId: '360768034609',
     projectId: 'petcore-5ddcf',
     authDomain: 'petcore-5ddcf.firebaseapp.com',
+    databaseURL: 'https://petcore-5ddcf-default-rtdb.firebaseio.com',
     storageBucket: 'petcore-5ddcf.firebasestorage.app',
     measurementId: 'G-X6HB40MBM2',
-    databaseURL: 'https://petcore-5ddcf-default-rtdb.firebaseio.com',
   );
 }

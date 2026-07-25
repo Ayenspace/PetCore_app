@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "360768034609",
+    "firebase_url": "https://petcore-5ddcf-default-rtdb.firebaseio.com",
     "project_id": "petcore-5ddcf",
     "storage_bucket": "petcore-5ddcf.firebasestorage.app"
   },
