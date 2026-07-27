@@ -10,6 +10,9 @@ import '../screens/home/home_screen.dart';
 import '../screens/pets/pets_screen.dart';
 import '../screens/pets/pet_details_screen.dart';
 import '../screens/appointments/appointments.dart';
+import '../screens/appointments/add_appointment.dart';
+import '../screens/appointments/edit_appointment_screen.dart';
+import '../screens/appointments/appointment_details.dart';
 import '../screens/medical/medical_records_screen.dart';
 import '../screens/vaccinations/vaccinations_screen.dart';
 import '../screens/reminders/reminders_screen.dart';
@@ -36,9 +39,10 @@ class AppRouter {
       GoRoute(path: '/pets/:id/edit', builder: (c, s) => EditPetScreen(petId: s.pathParameters['id']!)),
       GoRoute(path: '/appointments', builder: (c, s) => const AppointmentsScreen()),
       GoRoute(path: '/appointments/add', builder: (c, s) => const AddAppointmentScreen()),
-      GoRoute(path: '/appointments/:id', builder: (c, s) => AppointmentDetailsScreen(appointmentId: s.pathParameters['id']!)),
       GoRoute(path: '/appointments/:id/edit', builder: (c, s) => EditAppointmentScreen(appointmentId: s.pathParameters['id']!)),
+      GoRoute(path: '/appointments/:id', builder: (c, s) => AppointmentDetailsScreen(appointmentId: s.pathParameters['id']!)),
       GoRoute(path: '/medical', builder: (c, s) => const MedicalRecordsScreen()),
+
       GoRoute(path: '/medical/add', builder: (c, s) => const AddMedicalRecordScreen()),
       GoRoute(path: '/vaccinations', builder: (c, s) => const VaccinationsScreen()),
       GoRoute(path: '/vaccinations/add', builder: (c, s) => const AddVaccinationScreen()),
@@ -57,3 +61,5 @@ class AppRouter {
     ],
   );
 }
+
+
