@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'providers/appointment_provider.dart';
 import 'providers/auth_provider.dart';
 import 'providers/medical_provider.dart';
+import 'providers/marketplace_provider.dart';
 import 'providers/reminder_provider.dart';
 import 'providers/vaccination_provider.dart';
 import 'providers/pet_providers.dart';
@@ -25,6 +26,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => MedicalProvider()),
         ChangeNotifierProvider(create: (_) => VaccinationProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
+        ChangeNotifierProvider(create: (_) => MarketplaceProvider()),
       ],
       child: const PetCoreApp(),
     ),

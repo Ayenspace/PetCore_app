@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import '../../models/user_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/pet_providers.dart';
 import '../../services/authentication.dart';
@@ -82,67 +83,175 @@ class ProfileScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Stats row
-                  Row(
-                    children: [
-                      _StatTile(value: '$petCount', label: 'Pets', icon: Icons.pets),
-                      const SizedBox(width: 12),
-                      _StatTile(
-                        value: user.isVet ? (user.specialization ?? 'General') : user.email.split('@').first,
-                        label: user.isVet ? 'Specialization' : 'Username',
-                        icon: user.isVet ? Icons.workspace_premium_outlined : Icons.alternate_email,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Info section
-                  _SectionCard(
-                    children: [
-                      _InfoTile(icon: Icons.email_outlined, label: 'Email', value: user.email),
-                      if (user.phone != null) _InfoTile(icon: Icons.phone_outlined, label: 'Phone', value: user.phone!),
-                      if (user.address != null) _InfoTile(icon: Icons.location_on_outlined, label: 'Address', value: user.address!),
-                      if (user.bio != null) _InfoTile(icon: Icons.info_outline, label: 'Bio', value: user.bio!),
-                      if (user.isVet && user.clinicName != null)
-                        _InfoTile(icon: Icons.local_hospital_outlined, label: 'Clinic', value: user.clinicName!),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Quick links
-                  _SectionCard(
-                    children: [
-                      _LinkTile(icon: Icons.pets, label: 'My Pets', onTap: () => context.go('/pets')),
-                      _LinkTile(icon: Icons.calendar_today_outlined, label: 'Appointments', onTap: () => context.go('/appointments')),
-                      _LinkTile(icon: Icons.medical_services_outlined, label: 'Medical Records', onTap: () => context.go('/medical')),
-                      _LinkTile(icon: Icons.vaccines, label: 'Vaccinations', onTap: () => context.go('/vaccinations')),
-                      _LinkTile(icon: Icons.settings_outlined, label: 'Settings', onTap: () => context.go('/settings')),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Logout
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () async {
-                        await context.read<AppAuthProvider>().logout();
-                        if (context.mounted) context.go('/login');
-                      },
-                      icon: const Icon(Icons.logout, color: Colors.red),
-                      label: const Text('Log Out', style: TextStyle(color: Colors.red)),
-                      style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
-              ),
+              child: user.isVet
+                  ? _VetProfileBody(user: user)
+                  : _OwnerProfileBody(user: user, petCount: petCount),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Vet Profile Body ───────────────────────────────────────────────────────
+
+class _VetProfileBody extends StatelessWidget {
+  final UserModel user;
+  const _VetProfileBody({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Vet stats: specialization + clinic
+        Row(
+          children: [
+            _StatTile(
+              icon: Icons.workspace_premium_outlined,
+              label: 'Specialization',
+              value: user.specialization?.isNotEmpty == true ? user.specialization! : 'General',
+            ),
+            const SizedBox(width: 12),
+            _StatTile(
+              icon: Icons.local_hospital_outlined,
+              label: 'Clinic',
+              value: user.clinicName?.isNotEmpty == true ? user.clinicName! : 'Not set',
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        // Contact info
+        _SectionLabel('Contact Information'),
+        const SizedBox(height: 8),
+        _SectionCard(children: [
+          _InfoTile(icon: Icons.email_outlined, label: 'Email', value: user.email),
+          if (user.phone != null && user.phone!.isNotEmpty)
+            _InfoTile(icon: Icons.phone_outlined, label: 'Phone', value: user.phone!),
+          if (user.address != null && user.address!.isNotEmpty)
+            _InfoTile(icon: Icons.location_on_outlined, label: 'Address', value: user.address!),
+        ]),
+        const SizedBox(height: 20),
+
+        // Clinic info
+        _SectionLabel('Clinic Information'),
+        const SizedBox(height: 8),
+        _SectionCard(children: [
+          _InfoTile(
+            icon: Icons.local_hospital_outlined,
+            label: 'Clinic Name',
+            value: user.clinicName?.isNotEmpty == true ? user.clinicName! : 'Not provided',
+          ),
+          _InfoTile(
+            icon: Icons.workspace_premium_outlined,
+            label: 'Specialization',
+            value: user.specialization?.isNotEmpty == true ? user.specialization! : 'Not provided',
+          ),
+          if (user.bio != null && user.bio!.isNotEmpty)
+            _InfoTile(icon: Icons.info_outline, label: 'Bio', value: user.bio!),
+        ]),
+        const SizedBox(height: 20),
+
+        // Quick links — vet relevant
+        _SectionLabel('Quick Access'),
+        const SizedBox(height: 8),
+        _SectionCard(children: [
+          _LinkTile(icon: Icons.calendar_today_outlined, label: 'Appointments', onTap: () => GoRouter.of(context).go('/appointments')),
+          _LinkTile(icon: Icons.medical_services_outlined, label: 'Medical Records', onTap: () => GoRouter.of(context).go('/medical')),
+          _LinkTile(icon: Icons.vaccines, label: 'Vaccinations', onTap: () => GoRouter.of(context).go('/vaccinations')),
+          _LinkTile(icon: Icons.bar_chart_outlined, label: 'Reports', onTap: () => GoRouter.of(context).push('/reports')),
+          _LinkTile(icon: Icons.settings_outlined, label: 'Settings', onTap: () => GoRouter.of(context).go('/settings')),
+        ]),
+        const SizedBox(height: 20),
+
+        _LogoutButton(),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+// ── Owner Profile Body ─────────────────────────────────────────────────────
+
+class _OwnerProfileBody extends StatelessWidget {
+  final UserModel user;
+  final int petCount;
+  const _OwnerProfileBody({required this.user, required this.petCount});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _StatTile(icon: Icons.pets, label: 'My Pets', value: '$petCount'),
+            const SizedBox(width: 12),
+            _StatTile(icon: Icons.alternate_email, label: 'Username', value: user.email.split('@').first),
+          ],
+        ),
+        const SizedBox(height: 20),
+
+        _SectionCard(children: [
+          _InfoTile(icon: Icons.email_outlined, label: 'Email', value: user.email),
+          if (user.phone != null && user.phone!.isNotEmpty)
+            _InfoTile(icon: Icons.phone_outlined, label: 'Phone', value: user.phone!),
+          if (user.address != null && user.address!.isNotEmpty)
+            _InfoTile(icon: Icons.location_on_outlined, label: 'Address', value: user.address!),
+          if (user.bio != null && user.bio!.isNotEmpty)
+            _InfoTile(icon: Icons.info_outline, label: 'Bio', value: user.bio!),
+        ]),
+        const SizedBox(height: 20),
+
+        _SectionCard(children: [
+          _LinkTile(icon: Icons.pets, label: 'My Pets', onTap: () => GoRouter.of(context).go('/pets')),
+          _LinkTile(icon: Icons.calendar_today_outlined, label: 'Appointments', onTap: () => GoRouter.of(context).go('/appointments')),
+          _LinkTile(icon: Icons.medical_services_outlined, label: 'Medical Records', onTap: () => GoRouter.of(context).go('/medical')),
+          _LinkTile(icon: Icons.vaccines, label: 'Vaccinations', onTap: () => GoRouter.of(context).go('/vaccinations')),
+          _LinkTile(icon: Icons.settings_outlined, label: 'Settings', onTap: () => GoRouter.of(context).go('/settings')),
+        ]),
+        const SizedBox(height: 20),
+
+        _LogoutButton(),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
+
+// ── Shared Widgets ─────────────────────────────────────────────────────────
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) => Text(
+        text.toUpperCase(),
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: Theme.of(context).colorScheme.primary,
+          letterSpacing: 1.1,
+        ),
+      );
+}
+
+class _LogoutButton extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () async {
+          await context.read<AppAuthProvider>().logout();
+          if (context.mounted) GoRouter.of(context).go('/login');
+        },
+        icon: const Icon(Icons.logout, color: Colors.red),
+        label: const Text('Log Out', style: TextStyle(color: Colors.red)),
+        style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
       ),
     );
   }
@@ -173,8 +282,8 @@ class _StatTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), overflow: TextOverflow.ellipsis),
-                  Text(label, style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), overflow: TextOverflow.ellipsis, maxLines: 1),
+                  Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
                 ],
               ),
             ),
@@ -198,15 +307,12 @@ class _SectionCard extends StatelessWidget {
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
       ),
       child: Column(
-        children: children.map((child) {
-          final index = children.indexOf(child);
-          return Column(
-            children: [
-              child,
-              if (index < children.length - 1) Divider(height: 1, indent: 52, color: Colors.grey.shade100),
-            ],
-          );
-        }).toList(),
+        children: [
+          for (int i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i < children.length - 1) Divider(height: 1, indent: 52, color: Colors.grey.shade100),
+          ],
+        ],
       ),
     );
   }
