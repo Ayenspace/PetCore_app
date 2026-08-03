@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/marketplace_model.dart';
 import 'firestore.dart';
 
@@ -17,7 +19,10 @@ class MarketplaceService {
       if (data == null) return [];
       final map = Map<String, dynamic>.from(data as Map);
       return map.values
-          .map((v) => MarketplaceModel.fromMap(Map<String, dynamic>.from(v as Map)))
+          .map(
+            (v) =>
+                MarketplaceModel.fromMap(Map<String, dynamic>.from(v as Map)),
+          )
           .toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });
@@ -30,8 +35,10 @@ class MarketplaceService {
       data['id'] = id;
       await _db.set('$_path/$id', data);
       return true;
-    } catch (_) {
-      return false;
+    } catch (e, st) {
+      debugPrint('MarketplaceService.addListing error: $e');
+      debugPrint('$st');
+      rethrow;
     }
   }
 
@@ -53,10 +60,34 @@ class MarketplaceService {
     }
   }
 
-  Future<String> uploadListingImage(String sellerId, String listingId, File file, int index) async {
+  Future<String> uploadListingImage(
+    String sellerId,
+    String listingId,
+    XFile xFile,
+    int index,
+  ) async {
     final ref = _storage.ref('listing_images/$sellerId/$listingId/$index.jpg');
-    await ref.putFile(file, SettableMetadata(contentType: 'image/jpeg'));
-    return await ref.getDownloadURL();
+    try {
+      debugPrint(
+        'MarketplaceService: uploading image $index for listing $listingId',
+      );
+      if (kIsWeb) {
+        final bytes = await xFile.readAsBytes();
+        await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+      } else {
+        await ref.putFile(
+          File(xFile.path),
+          SettableMetadata(contentType: 'image/jpeg'),
+        );
+      }
+      final url = await ref.getDownloadURL();
+      debugPrint('MarketplaceService: uploaded image $index, url=$url');
+      return url;
+    } catch (e, st) {
+      debugPrint('MarketplaceService.uploadListingImage error: $e');
+      debugPrint('$st');
+      rethrow;
+    }
   }
 
   Future<void> deleteListingImages(String sellerId, String listingId) async {

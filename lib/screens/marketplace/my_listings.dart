@@ -46,7 +46,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           : ListView.separated(
               padding: const EdgeInsets.all(16),
               itemCount: listings.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 12),
+              separatorBuilder: (_, _) => const SizedBox(height: 12),
               itemBuilder: (context, index) {
                 final listing = listings[index];
                 return ListTile(

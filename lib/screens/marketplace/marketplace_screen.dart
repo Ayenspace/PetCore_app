@@ -243,7 +243,7 @@ class _ListingCard extends StatelessWidget {
                     ? CachedNetworkImage(
                         imageUrl: listing.imageUrls.first,
                         fit: BoxFit.cover,
-                        placeholder: (_, __) => Container(
+                        placeholder: (_, _) => Container(
                           color: theme.colorScheme.primary.withValues(
                             alpha: 0.08,
                           ),
@@ -251,7 +251,7 @@ class _ListingCard extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2),
                           ),
                         ),
-                        errorWidget: (_, __, ___) =>
+                        errorWidget: (_, _, _) =>
                             _PlaceholderImage(theme: theme),
                       )
                     : _PlaceholderImage(theme: theme),

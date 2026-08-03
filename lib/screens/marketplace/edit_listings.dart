@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -91,18 +92,15 @@ class _EditListingScreenState extends State<EditListingScreen> {
       final imageUrls = List<String>.from(_existingImageUrls);
 
       if (_pickedImages.isNotEmpty) {
-        await provider.deleteListingImages(user.id, widget.listingId);
-        imageUrls.clear();
-        for (var i = 0; i < _pickedImages.length; i++) {
-          final url = await provider.uploadImage(
-            user.id,
-            widget.listingId,
-            File(_pickedImages[i].path),
-            i,
+          await provider.deleteListingImages(user.id, widget.listingId);
+          imageUrls.clear();
+          final uploaded = await Future.wait(
+            _pickedImages.asMap().entries.map(
+              (e) => provider.uploadImage(user.id, widget.listingId, e.value, e.key),
+            ),
           );
-          imageUrls.add(url);
+          imageUrls.addAll(uploaded);
         }
-      }
 
       final price = double.tryParse(_priceController.text.trim()) ?? 0;
       final editedListing = MarketplaceModel(
@@ -294,8 +292,8 @@ class _EditListingScreenState extends State<EditListingScreen> {
           runSpacing: 12,
           children: [
             ..._existingImageUrls.map((url) => _buildImageTileUrl(url, theme)),
-            ..._pickedImages.map(
-              (image) => _buildImageTile(File(image.path), theme),
+            ..._pickedImages.asMap().entries.map(
+              (e) => _buildNewImageTile(e.key, e.value, theme),
             ),
             if (_existingImageUrls.length + _pickedImages.length < 4)
               _buildAddImageTile(theme),
@@ -336,21 +334,20 @@ class _EditListingScreenState extends State<EditListingScreen> {
     );
   }
 
-  Widget _buildImageTile(File file, ThemeData theme) {
+  Widget _buildNewImageTile(int index, XFile xFile, ThemeData theme) {
     return Stack(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: Image.file(file, width: 88, height: 88, fit: BoxFit.cover),
+          child: kIsWeb
+              ? Image.network(xFile.path, width: 88, height: 88, fit: BoxFit.cover)
+              : Image.file(File(xFile.path), width: 88, height: 88, fit: BoxFit.cover),
         ),
         Positioned(
           top: 4,
           right: 4,
           child: GestureDetector(
-            onTap: () => setState(
-              () =>
-                  _pickedImages.removeWhere((xFile) => xFile.path == file.path),
-            ),
+            onTap: () => setState(() => _pickedImages.removeAt(index)),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.5),

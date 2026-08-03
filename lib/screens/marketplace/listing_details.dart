@@ -52,7 +52,7 @@ class ListingDetailsScreen extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.only(bottom: 8),
                   itemCount: listing.imageUrls.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 12),
+                  separatorBuilder: (_, _) => const SizedBox(width: 12),
                   itemBuilder: (context, index) => ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: CachedNetworkImage(
@@ -60,14 +60,14 @@ class ListingDetailsScreen extends StatelessWidget {
                       width: 300,
                       height: 220,
                       fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
+                      placeholder: (_, _) => Container(
                         width: 300,
                         color: Colors.grey.shade200,
                         child: const Center(
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
                       ),
-                      errorWidget: (_, __, ___) => Container(
+                      errorWidget: (_, _, _) => Container(
                         width: 300,
                         color: Colors.grey.shade200,
                         child: const Center(child: Icon(Icons.broken_image)),

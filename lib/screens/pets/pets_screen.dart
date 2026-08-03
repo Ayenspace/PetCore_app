@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -167,7 +168,7 @@ class _PetFormState extends State<_PetForm> {
   String _gender = 'Male';
   String? _selectedSpecies;
   DateTime _dateOfBirth = DateTime.now().subtract(const Duration(days: 365));
-  File? _pickedImage;
+  XFile? _pickedImage;
   bool _saving = false;
 
   bool get _isEditing => widget.pet != null;
@@ -197,7 +198,7 @@ class _PetFormState extends State<_PetForm> {
 
   Future<void> _pickPhoto() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70);
-    if (picked != null) setState(() => _pickedImage = File(picked.path));
+    if (picked != null) setState(() => _pickedImage = picked);
   }
 
   Future<void> _pickDate() async {
@@ -250,8 +251,8 @@ class _PetFormState extends State<_PetForm> {
     }
   }
 
-  Future<String> _uploadPetPhoto(String uid, String petId, File file) =>
-      _PetStorageHelper.upload(uid, petId, file);
+  Future<String> _uploadPetPhoto(String uid, String petId, XFile xFile) =>
+      _PetStorageHelper.upload(uid, petId, xFile);
 
   @override
   Widget build(BuildContext context) {
@@ -278,7 +279,7 @@ class _PetFormState extends State<_PetForm> {
                         radius: 50,
                         backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                         backgroundImage: _pickedImage != null
-                            ? FileImage(_pickedImage!)
+                            ? (kIsWeb ? NetworkImage(_pickedImage!.path) : FileImage(File(_pickedImage!.path))) as ImageProvider
                             : (widget.pet?.photoUrl != null ? NetworkImage(widget.pet!.photoUrl!) as ImageProvider : null),
                         child: (_pickedImage == null && widget.pet?.photoUrl == null)
                             ? Icon(Icons.pets, size: 50, color: theme.colorScheme.primary)
@@ -398,9 +399,9 @@ class _PetFormState extends State<_PetForm> {
 
 // Helper to upload pet photo to Firebase Storage
 class _PetStorageHelper {
-  static Future<String> upload(String uid, String petId, File file) async {
+  static Future<String> upload(String uid, String petId, XFile xFile) async {
     final storage = StorageService();
-    return await storage.uploadPetPhoto(uid, petId, file);
+    return await storage.uploadPetPhoto(uid, petId, xFile);
   }
 }
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../models/marketplace_model.dart';
 import '../services/marketplace.dart';
 
@@ -70,9 +71,20 @@ class MarketplaceProvider extends ChangeNotifier {
   }
 
   Future<bool> addListing(MarketplaceModel listing) async {
+    _error = null;
     _setLoading(true);
-    final success = await _service.addListing(listing);
-    if (!success) _error = 'Failed to add listing.';
+    bool success;
+    try {
+      success = await _service.addListing(listing);
+    } catch (e, st) {
+      success = false;
+      _error = 'Failed to add listing: $e';
+      debugPrint('MarketplaceProvider.addListing error: $e');
+      debugPrint('$st');
+    }
+    if (!success && _error == null) {
+      _error = 'Failed to add listing.';
+    }
     _setLoading(false);
     return success;
   }
@@ -103,7 +115,7 @@ class MarketplaceProvider extends ChangeNotifier {
   Future<String> uploadImage(
     String sellerId,
     String listingId,
-    dynamic file,
+    XFile file,
     int index,
   ) => _service.uploadListingImage(sellerId, listingId, file, index);
 

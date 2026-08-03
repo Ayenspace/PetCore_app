@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -372,7 +373,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _clinicController;
   late final TextEditingController _specializationController;
 
-  File? _pickedImage;
+  XFile? _pickedImage;
   bool _saving = false;
 
   @override
@@ -400,7 +401,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _pickPhoto() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70);
-    if (picked != null) setState(() => _pickedImage = File(picked.path));
+    if (picked != null) setState(() => _pickedImage = picked);
   }
 
   Future<void> _save() async {
@@ -475,7 +476,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       radius: 52,
                       backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
                       backgroundImage: _pickedImage != null
-                          ? FileImage(_pickedImage!)
+                          ? (kIsWeb ? NetworkImage(_pickedImage!.path) : FileImage(File(_pickedImage!.path))) as ImageProvider
                           : (user.photoUrl != null ? NetworkImage(user.photoUrl!) as ImageProvider : null),
                       child: (_pickedImage == null && user.photoUrl == null)
                           ? Icon(Icons.person, size: 52, color: theme.colorScheme.primary)

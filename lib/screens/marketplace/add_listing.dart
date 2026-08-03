@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -27,6 +28,12 @@ class _AddListingScreenState extends State<AddListingScreen> {
   bool _isAvailable = true;
   bool _saving = false;
   final List<XFile> _pickedImages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<MarketplaceProvider>().listenToListings();
+  }
 
   @override
   void dispose() {
@@ -68,14 +75,26 @@ class _AddListingScreenState extends State<AddListingScreen> {
       final imageUrls = <String>[];
 
       for (var i = 0; i < _pickedImages.length; i += 1) {
-        final xFile = _pickedImages[i];
-        final url = await marketplaceProvider.uploadImage(
-          user.id,
-          listingId,
-          File(xFile.path),
-          i,
-        );
-        imageUrls.add(url);
+        try {
+          debugPrint(
+            'AddListingScreen: uploading image ${i + 1}/${_pickedImages.length}',
+          );
+          final url = await marketplaceProvider.uploadImage(
+            user.id,
+            listingId,
+            _pickedImages[i],
+            i,
+          );
+          imageUrls.add(url);
+        } catch (e) {
+          if (!mounted) return;
+          debugPrint('AddListingScreen image upload failed: $e');
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
+          setState(() => _saving = false);
+          return;
+        }
       }
 
       final price = double.tryParse(_priceController.text.trim()) ?? 0;
@@ -268,8 +287,8 @@ class _AddListingScreenState extends State<AddListingScreen> {
           spacing: 12,
           runSpacing: 12,
           children: [
-            ..._pickedImages.map(
-              (image) => _buildImageTile(File(image.path), theme),
+            ..._pickedImages.asMap().entries.map(
+              (entry) => _buildImageTile(entry.key, entry.value, theme),
             ),
             if (_pickedImages.length < 4) _buildAddImageTile(theme),
           ],
@@ -283,21 +302,30 @@ class _AddListingScreenState extends State<AddListingScreen> {
     );
   }
 
-  Widget _buildImageTile(File file, ThemeData theme) {
+  Widget _buildImageTile(int index, XFile xFile, ThemeData theme) {
     return Stack(
       children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
-          child: Image.file(file, width: 88, height: 88, fit: BoxFit.cover),
+          child: kIsWeb
+              ? Image.network(
+                  xFile.path,
+                  width: 88,
+                  height: 88,
+                  fit: BoxFit.cover,
+                )
+              : Image.file(
+                  File(xFile.path),
+                  width: 88,
+                  height: 88,
+                  fit: BoxFit.cover,
+                ),
         ),
         Positioned(
           top: 4,
           right: 4,
           child: GestureDetector(
-            onTap: () => setState(
-              () =>
-                  _pickedImages.removeWhere((xFile) => xFile.path == file.path),
-            ),
+            onTap: () => setState(() => _pickedImages.removeAt(index)),
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.5),
