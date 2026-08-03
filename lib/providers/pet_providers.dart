@@ -70,8 +70,13 @@ class PetProvider extends ChangeNotifier {
     }
   }
 
-  PetModel? getPetById(String id) =>
-      _pets.firstWhere((p) => p.id == id, orElse: () => _pets.first);
+  PetModel? getPetById(String id) {
+    try {
+      return _pets.firstWhere((p) => p.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
 
   void _setLoading(bool value) {
     _loading = value;

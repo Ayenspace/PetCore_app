@@ -90,6 +90,14 @@ class AppAuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshUser() async {
+    if (_user == null) return;
+    try {
+      _user = await _service.getUser(_user!.id);
+      notifyListeners();
+    } catch (_) {}
+  }
+
   Future<bool> resetPassword(String email) async {
     _setLoading(true);
     try {

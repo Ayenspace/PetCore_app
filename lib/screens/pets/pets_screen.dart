@@ -1,9 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
-import '../../providers/pet_poviders.dart';
 import '../../models/pet_model.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/pet_providers.dart';
+import '../../services/storage.dart';
+
+// ── Pets List Screen ───────────────────────────────────────────────────────
 
 class PetsScreen extends StatefulWidget {
   const PetsScreen({super.key});
@@ -29,20 +34,14 @@ class _PetsScreenState extends State<PetsScreen> {
       appBar: AppBar(
         title: const Text('My Pets', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push('/pets/add'),
-          ),
+          IconButton(icon: const Icon(Icons.add), onPressed: () => context.push('/pets/add')),
         ],
       ),
       bottomNavigationBar: _BottomNav(currentIndex: 1),
-      body: pets.isEmpty ? _buildEmptyState(context) : _buildPetList(context, pets),
       floatingActionButton: pets.isNotEmpty
-          ? FloatingActionButton(
-              onPressed: () => context.push('/pets/add'),
-              child: const Icon(Icons.add),
-            )
+          ? FloatingActionButton(onPressed: () => context.push('/pets/add'), child: const Icon(Icons.add))
           : null,
+      body: pets.isEmpty ? _buildEmptyState(context) : _buildPetList(context, pets),
     );
   }
 
@@ -99,9 +98,7 @@ class _PetCard extends StatelessWidget {
             radius: 28,
             backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
             backgroundImage: pet.photoUrl != null ? NetworkImage(pet.photoUrl!) : null,
-            child: pet.photoUrl == null
-                ? Icon(Icons.pets, color: theme.colorScheme.primary, size: 28)
-                : null,
+            child: pet.photoUrl == null ? Icon(Icons.pets, color: theme.colorScheme.primary, size: 28) : null,
           ),
           title: Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           subtitle: Text(
@@ -114,9 +111,7 @@ class _PetCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: pet.gender.toLowerCase() == 'male'
-                      ? Colors.blue.shade50
-                      : Colors.pink.shade50,
+                  color: pet.gender.toLowerCase() == 'male' ? Colors.blue.shade50 : Colors.pink.shade50,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
@@ -137,6 +132,8 @@ class _PetCard extends StatelessWidget {
     );
   }
 }
+
+// ── Add / Edit Pet Screen ──────────────────────────────────────────────────
 
 class AddPetScreen extends StatelessWidget {
   const AddPetScreen({super.key});
@@ -164,11 +161,15 @@ class _PetForm extends StatefulWidget {
 class _PetFormState extends State<_PetForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nameController;
-  late final TextEditingController _speciesController;
   late final TextEditingController _breedController;
   late final TextEditingController _weightController;
+
   String _gender = 'Male';
+  String? _selectedSpecies;
   DateTime _dateOfBirth = DateTime.now().subtract(const Duration(days: 365));
+  File? _pickedImage;
+  bool _saving = false;
+
   bool get _isEditing => widget.pet != null;
 
   final _species = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Fish', 'Hamster', 'Reptile', 'Other'];
@@ -177,22 +178,26 @@ class _PetFormState extends State<_PetForm> {
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.pet?.name ?? '');
-    _speciesController = TextEditingController(text: widget.pet?.species ?? '');
     _breedController = TextEditingController(text: widget.pet?.breed ?? '');
     _weightController = TextEditingController(text: widget.pet?.weight?.toString() ?? '');
     if (widget.pet != null) {
       _gender = widget.pet!.gender;
       _dateOfBirth = widget.pet!.dateOfBirth;
+      _selectedSpecies = _species.contains(widget.pet!.species) ? widget.pet!.species : 'Other';
     }
   }
 
   @override
   void dispose() {
     _nameController.dispose();
-    _speciesController.dispose();
     _breedController.dispose();
     _weightController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickPhoto() async {
+    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (picked != null) setState(() => _pickedImage = File(picked.path));
   }
 
   Future<void> _pickDate() async {
@@ -207,34 +212,50 @@ class _PetFormState extends State<_PetForm> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    final auth = context.read<AppAuthProvider>();
-    final petProvider = context.read<PetProvider>();
-    final uid = auth.user!.id;
+    setState(() => _saving = true);
 
-    final pet = PetModel(
-      id: widget.pet?.id ?? '',
-      ownerId: uid,
-      name: _nameController.text.trim(),
-      species: _speciesController.text.trim(),
-      breed: _breedController.text.trim().isEmpty ? null : _breedController.text.trim(),
-      gender: _gender,
-      dateOfBirth: _dateOfBirth,
-      weight: double.tryParse(_weightController.text),
-      photoUrl: widget.pet?.photoUrl,
-      createdAt: widget.pet?.createdAt ?? DateTime.now(),
-    );
+    try {
+      final auth = context.read<AppAuthProvider>();
+      final petProvider = context.read<PetProvider>();
+      final uid = auth.user!.id;
 
-    final success = _isEditing
-        ? await petProvider.updatePet(pet)
-        : await petProvider.addPet(pet);
+      // Upload photo if picked
+      String? photoUrl = widget.pet?.photoUrl;
+      if (_pickedImage != null) {
+        final petId = widget.pet?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
+        photoUrl = await _uploadPetPhoto(uid, petId, _pickedImage!);
+      }
 
-    if (success && mounted) context.pop();
+      final pet = PetModel(
+        id: widget.pet?.id ?? '',
+        ownerId: uid,
+        name: _nameController.text.trim(),
+        species: _selectedSpecies ?? 'Other',
+        breed: _breedController.text.trim().isEmpty ? null : _breedController.text.trim(),
+        gender: _gender,
+        dateOfBirth: _dateOfBirth,
+        weight: double.tryParse(_weightController.text),
+        photoUrl: photoUrl,
+        createdAt: widget.pet?.createdAt ?? DateTime.now(),
+      );
+
+      final success = _isEditing ? await petProvider.updatePet(pet) : await petProvider.addPet(pet);
+      if (success && mounted) context.pop();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
+
+  Future<String> _uploadPetPhoto(String uid, String petId, File file) =>
+      _PetStorageHelper.upload(uid, petId, file);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final petProvider = context.watch<PetProvider>();
 
     return Scaffold(
       appBar: AppBar(
@@ -247,92 +268,96 @@ class _PetFormState extends State<_PetForm> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Photo picker
               Center(
-                child: Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 50,
-                      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-                      child: Icon(Icons.pets, size: 50, color: theme.colorScheme.primary),
-                    ),
-                    Positioned(
-                      bottom: 0, right: 0,
-                      child: CircleAvatar(
-                        radius: 16,
-                        backgroundColor: theme.colorScheme.primary,
-                        child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                child: GestureDetector(
+                  onTap: _pickPhoto,
+                  child: Stack(
+                    children: [
+                      CircleAvatar(
+                        radius: 50,
+                        backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        backgroundImage: _pickedImage != null
+                            ? FileImage(_pickedImage!)
+                            : (widget.pet?.photoUrl != null ? NetworkImage(widget.pet!.photoUrl!) as ImageProvider : null),
+                        child: (_pickedImage == null && widget.pet?.photoUrl == null)
+                            ? Icon(Icons.pets, size: 50, color: theme.colorScheme.primary)
+                            : null,
                       ),
-                    ),
-                  ],
+                      Positioned(
+                        bottom: 0, right: 0,
+                        child: CircleAvatar(
+                          radius: 16,
+                          backgroundColor: theme.colorScheme.primary,
+                          child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SizedBox(height: 28),
+
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(labelText: 'Pet Name', prefixIcon: Icon(Icons.pets)),
-                validator: (v) => v == null || v.isEmpty ? 'Please enter a name' : null,
+                validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a name' : null,
               ),
               const SizedBox(height: 16),
+
               DropdownButtonFormField<String>(
-                initialValue: _species.contains(_speciesController.text) ? _speciesController.text : null,
+                initialValue: _selectedSpecies,
                 decoration: const InputDecoration(labelText: 'Species', prefixIcon: Icon(Icons.category_outlined)),
                 items: _species.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-                onChanged: (v) => _speciesController.text = v ?? '',
-                validator: (v) => v == null || v.isEmpty ? 'Please select a species' : null,
+                onChanged: (v) => setState(() => _selectedSpecies = v),
+                validator: (v) => v == null ? 'Please select a species' : null,
               ),
               const SizedBox(height: 16),
+
               TextFormField(
                 controller: _breedController,
                 textCapitalization: TextCapitalization.words,
                 decoration: const InputDecoration(labelText: 'Breed (optional)', prefixIcon: Icon(Icons.info_outline)),
               ),
               const SizedBox(height: 16),
+
+              // Gender selector
+              Text('Gender', style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+              const SizedBox(height: 8),
               Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Gender', style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: ['Male', 'Female'].map((g) => Expanded(
-                            child: GestureDetector(
-                              onTap: () => setState(() => _gender = g),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                margin: EdgeInsets.only(right: g == 'Male' ? 8 : 0),
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: _gender == g ? theme.colorScheme.primary : Colors.transparent,
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: _gender == g ? theme.colorScheme.primary : Colors.grey.shade300,
-                                  ),
-                                ),
-                                child: Text(
-                                  g,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: _gender == g ? Colors.white : Colors.grey,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          )).toList(),
+                children: ['Male', 'Female'].map((g) => Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _gender = g),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: EdgeInsets.only(right: g == 'Male' ? 8 : 0),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        color: _gender == g ? theme.colorScheme.primary : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: _gender == g ? theme.colorScheme.primary : Colors.grey.shade300),
+                      ),
+                      child: Text(
+                        g,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: _gender == g ? Colors.white : Colors.grey,
+                          fontWeight: FontWeight.w600,
                         ),
-                      ],
+                      ),
                     ),
                   ),
-                ],
+                )).toList(),
               ),
               const SizedBox(height: 16),
+
+              // Date of birth — key forces rebuild when date changes
               GestureDetector(
                 onTap: _pickDate,
                 child: AbsorbPointer(
                   child: TextFormField(
+                    key: ValueKey(_dateOfBirth),
                     initialValue: '${_dateOfBirth.day}/${_dateOfBirth.month}/${_dateOfBirth.year}',
                     decoration: const InputDecoration(
                       labelText: 'Date of Birth',
@@ -343,17 +368,22 @@ class _PetFormState extends State<_PetForm> {
                 ),
               ),
               const SizedBox(height: 16),
+
               TextFormField(
                 controller: _weightController,
                 keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: const InputDecoration(labelText: 'Weight in kg (optional)', prefixIcon: Icon(Icons.monitor_weight_outlined)),
+                decoration: const InputDecoration(
+                  labelText: 'Weight in kg (optional)',
+                  prefixIcon: Icon(Icons.monitor_weight_outlined),
+                ),
               ),
               const SizedBox(height: 32),
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: petProvider.loading ? null : _save,
-                  child: petProvider.loading
+                  onPressed: _saving ? null : _save,
+                  child: _saving
                       ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                       : Text(_isEditing ? 'Save Changes' : 'Add Pet', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                 ),
@@ -366,9 +396,20 @@ class _PetFormState extends State<_PetForm> {
   }
 }
 
+// Helper to upload pet photo to Firebase Storage
+class _PetStorageHelper {
+  static Future<String> upload(String uid, String petId, File file) async {
+    final storage = StorageService();
+    return await storage.uploadPetPhoto(uid, petId, file);
+  }
+}
+
+// ── Bottom Nav ─────────────────────────────────────────────────────────────
+
 class _BottomNav extends StatelessWidget {
   final int currentIndex;
   const _BottomNav({required this.currentIndex});
+
   @override
   Widget build(BuildContext context) {
     return NavigationBar(

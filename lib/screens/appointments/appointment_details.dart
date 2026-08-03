@@ -144,6 +144,10 @@ class AppointmentDetailsScreen extends StatelessWidget {
 
           FilledButton.tonalIcon(
             onPressed: () async {
+              final ownerId = context.read<AppAuthProvider>().user!.id;
+              final apptProvider = context.read<AppointmentProvider>();
+              final router = GoRouter.of(context);
+
               final confirm = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -170,18 +174,10 @@ class AppointmentDetailsScreen extends StatelessWidget {
 
               if (confirm != true) return;
 
-              final ownerId =
-                  context.read<AppAuthProvider>().user!.id;
-
-              await context
-                  .read<AppointmentProvider>()
-                  .deleteAppointment(
-                    ownerId,
-                    appointment.id,
-                  );
+              await apptProvider.deleteAppointment(ownerId, appointment.id);
 
               if (context.mounted) {
-                context.pop();
+                router.pop();
               }
             },
             icon: const Icon(Icons.delete),

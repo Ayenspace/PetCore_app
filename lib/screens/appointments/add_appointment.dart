@@ -170,7 +170,7 @@ class _AddAppointmentScreenState
             padding: const EdgeInsets.all(16),
             children: [
          DropdownButtonFormField<PetModel>(
-  value: _selectedPet,
+  initialValue: _selectedPet,
   decoration: const InputDecoration(
     labelText: 'Select Pet',
     border: OutlineInputBorder(),
@@ -194,7 +194,7 @@ class _AddAppointmentScreenState
 const SizedBox(height: 20),
 
 DropdownButtonFormField<String>(
-  value: _selectedService,
+  initialValue: _selectedService,
   decoration: const InputDecoration(
     labelText: 'Service',
     border: OutlineInputBorder(),

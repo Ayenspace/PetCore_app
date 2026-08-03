@@ -5,6 +5,7 @@ class AppointmentModel {
   final String ownerId;
   final String petId;
   final String petName;
+  final String service;
   final String vetName;
   final String? location;
   final DateTime dateTime;
@@ -17,6 +18,7 @@ class AppointmentModel {
     required this.ownerId,
     required this.petId,
     required this.petName,
+    required this.service,
     required this.vetName,
     this.location,
     required this.dateTime,
@@ -30,6 +32,7 @@ class AppointmentModel {
         ownerId: map['ownerId'],
         petId: map['petId'],
         petName: map['petName'],
+        service: map['service'] ?? '',
         vetName: map['vetName'],
         location: map['location'],
         dateTime: DateTime.parse(map['dateTime']),
@@ -43,6 +46,7 @@ class AppointmentModel {
         'ownerId': ownerId,
         'petId': petId,
         'petName': petName,
+        'service': service,
         'vetName': vetName,
         'location': location,
         'dateTime': dateTime.toIso8601String(),
@@ -52,6 +56,7 @@ class AppointmentModel {
       };
 
   AppointmentModel copyWith({
+    String? service,
     String? vetName,
     String? location,
     DateTime? dateTime,
@@ -63,6 +68,7 @@ class AppointmentModel {
         ownerId: ownerId,
         petId: petId,
         petName: petName,
+        service: service ?? this.service,
         vetName: vetName ?? this.vetName,
         location: location ?? this.location,
         dateTime: dateTime ?? this.dateTime,

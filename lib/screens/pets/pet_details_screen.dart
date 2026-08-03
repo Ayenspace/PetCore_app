@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/pet_poviders.dart';
+import '../../providers/pet_providers.dart';
 import '../../models/pet_model.dart';
 
 class PetDetailsScreen extends StatelessWidget {
