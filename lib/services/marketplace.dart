@@ -3,6 +3,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/marketplace_model.dart';
+import '../models/marketplace_order_model.dart';
 import 'firestore.dart';
 
 class MarketplaceService {
@@ -34,6 +35,7 @@ class MarketplaceService {
       final data = listing.copyWith().toMap();
       data['id'] = id;
       await _db.set('$_path/$id', data);
+      debugPrint('MarketplaceService.addListing success at $_path/$id');
       return true;
     } catch (e, st) {
       debugPrint('MarketplaceService.addListing error: $e');
@@ -54,6 +56,36 @@ class MarketplaceService {
   Future<bool> deleteListing(String id) async {
     try {
       await _db.delete('$_path/$id');
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Stream<List<MarketplaceOrderModel>> streamOrders(String userId) {
+    return _db.stream('marketplace_orders').map((event) {
+      final data = event.snapshot.value;
+      if (data == null) return <MarketplaceOrderModel>[];
+      final map = Map<String, dynamic>.from(data as Map);
+      return map.values
+          .map(
+            (v) => MarketplaceOrderModel.fromMap(
+              Map<String, dynamic>.from(v as Map),
+            ),
+          )
+          .where((order) => order.buyerId == userId || order.sellerId == userId)
+          .toList()
+        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    });
+  }
+
+  Future<bool> addOrder(MarketplaceOrderModel order) async {
+    try {
+      final id = order.id.isNotEmpty
+          ? order.id
+          : _db.generateId('marketplace_orders');
+      final data = order.copyWith(id: id).toMap();
+      await _db.set('marketplace_orders/$id', data);
       return true;
     } catch (_) {
       return false;

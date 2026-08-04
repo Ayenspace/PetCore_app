@@ -10,13 +10,17 @@ class PetProvider extends ChangeNotifier {
   bool _loading = false;
   String? _error;
   StreamSubscription? _subscription;
+  String? _listeningOwnerId;
 
   List<PetModel> get pets => _pets;
   bool get loading => _loading;
   String? get error => _error;
 
   void listenToPets(String ownerId) {
+    if (_listeningOwnerId == ownerId && _subscription != null) return;
+
     _subscription?.cancel();
+    _listeningOwnerId = ownerId;
     _subscription = _service.petsStream(ownerId).listen((pets) {
       _pets = pets;
       notifyListeners();
@@ -27,8 +31,10 @@ class PetProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       final newPet = await _service.addPet(pet);
-      _pets.add(newPet);
-      _pets.sort((a, b) => a.name.compareTo(b.name));
+      if (!_pets.any((existing) => existing.id == newPet.id)) {
+        _pets.add(newPet);
+        _pets.sort((a, b) => a.name.compareTo(b.name));
+      }
       _error = null;
       return true;
     } catch (e) {

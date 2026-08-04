@@ -55,9 +55,19 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 16),
-                Text('Welcome back!', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
+                Text(
+                  'Welcome back!',
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text('Log in to your account', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+                Text(
+                  'Log in to your account',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.grey,
+                  ),
+                ),
                 const SizedBox(height: 40),
                 TextFormField(
                   controller: _emailController,
@@ -67,7 +77,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Please enter your email';
+                    if (v == null || v.isEmpty)
+                      return 'Please enter your email';
                     if (!v.contains('@')) return 'Enter a valid email';
                     return null;
                   },
@@ -80,12 +91,18 @@ class _LoginScreenState extends State<LoginScreen> {
                     labelText: 'Password',
                     prefixIcon: const Icon(Icons.lock_outline),
                     suffixIcon: IconButton(
-                      icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                      onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: (v) {
-                    if (v == null || v.isEmpty) return 'Please enter your password';
+                    if (v == null || v.isEmpty)
+                      return 'Please enter your password';
                     return null;
                   },
                 ),
@@ -108,9 +125,21 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 18,
+                        ),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(auth.error!, style: const TextStyle(color: Colors.red, fontSize: 13))),
+                        Expanded(
+                          child: Text(
+                            auth.error!,
+                            style: const TextStyle(
+                              color: Colors.red,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -121,8 +150,21 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: ElevatedButton(
                     onPressed: auth.loading ? null : _login,
                     child: auth.loading
-                        ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                        : const Text('Log In', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Log In',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -132,7 +174,13 @@ class _LoginScreenState extends State<LoginScreen> {
                     const Text("Don't have an account? "),
                     GestureDetector(
                       onTap: () => context.go('/register'),
-                      child: Text('Sign Up', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
+                      child: Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: theme.colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),

@@ -69,10 +69,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         iconTheme: const IconThemeData(color: Colors.white), // White back arrow
         title: const Text(
           'Register',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios),
@@ -118,9 +115,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         icon: Icons.pets,
                         label: 'Pet Owner',
                         selected: _selectedRole == UserRole.petOwner,
-                        onTap: () => setState(
-                          () => _selectedRole = UserRole.petOwner,
-                        ),
+                        onTap: () =>
+                            setState(() => _selectedRole = UserRole.petOwner),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -146,10 +142,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     labelText: 'Full Name',
                     prefixIcon: Icon(Icons.person_outline),
                   ),
-                  validator: (v) =>
-                      v == null || v.trim().isEmpty
-                          ? 'Please enter your name'
-                          : null,
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'Please enter your name'
+                      : null,
                 ),
 
                 const SizedBox(height: 16),
@@ -188,9 +183,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ? Icons.visibility_off
                             : Icons.visibility,
                       ),
-                      onPressed: () => setState(
-                        () => _obscurePassword = !_obscurePassword,
-                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
                     ),
                   ),
                   validator: (v) {
@@ -219,9 +213,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ? Icons.visibility_off
                             : Icons.visibility,
                       ),
-                      onPressed: () => setState(
-                        () => _obscureConfirm = !_obscureConfirm,
-                      ),
+                      onPressed: () =>
+                          setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
                   ),
                   validator: (v) {
@@ -255,7 +248,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       labelText: 'Clinic Name',
                       prefixIcon: Icon(Icons.local_hospital_outlined),
                     ),
-                    validator: (v) => _selectedRole == UserRole.vet &&
+                    validator: (v) =>
+                        _selectedRole == UserRole.vet &&
                             (v == null || v.isEmpty)
                         ? 'Please enter your clinic name'
                         : null,
@@ -269,7 +263,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       labelText: 'Specialization (e.g. General, Surgery)',
                       prefixIcon: Icon(Icons.workspace_premium_outlined),
                     ),
-                    validator: (v) => _selectedRole == UserRole.vet &&
+                    validator: (v) =>
+                        _selectedRole == UserRole.vet &&
                             (v == null || v.isEmpty)
                         ? 'Please enter your specialization'
                         : null,
@@ -390,19 +385,13 @@ class _RoleCard extends StatelessWidget {
           color: selected ? theme.colorScheme.primary : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: selected
-                ? theme.colorScheme.primary
-                : Colors.grey.shade300,
+            color: selected ? theme.colorScheme.primary : Colors.grey.shade300,
             width: selected ? 2 : 1,
           ),
         ),
         child: Column(
           children: [
-            Icon(
-              icon,
-              color: selected ? Colors.white : Colors.grey,
-              size: 28,
-            ),
+            Icon(icon, color: selected ? Colors.white : Colors.grey, size: 28),
             const SizedBox(height: 8),
             Text(
               label,

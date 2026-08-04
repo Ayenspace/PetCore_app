@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -120,7 +119,7 @@ class _SearchBar extends StatelessWidget {
   }
 }
 
-// ── Category Filter ────────────────────────────────────────────────────────
+// ── Category Filter ───────────────────────────────────────────────────────
 
 class _CategoryFilter extends StatelessWidget {
   final MarketplaceProvider provider;
@@ -204,122 +203,112 @@ class _Chip extends StatelessWidget {
 }
 
 // ── Listing Card ───────────────────────────────────────────────────────────
-
 class _ListingCard extends StatelessWidget {
   final MarketplaceModel listing;
   final String? currentUid;
+
   const _ListingCard({required this.listing, required this.currentUid});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isOwner = listing.sellerId == currentUid;
 
-    return GestureDetector(
-      onTap: () => context.push('/marketplace/${listing.id}'),
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: InkWell(
+        onTap: () {
+          context.push('/marketplace/${listing.id}');
+        },
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(16),
-              ),
-              child: AspectRatio(
-                aspectRatio: 1.1,
-                child: listing.imageUrls.isNotEmpty
-                    ? CachedNetworkImage(
-                        imageUrl: listing.imageUrls.first,
-                        fit: BoxFit.cover,
-                        placeholder: (_, _) => Container(
-                          color: theme.colorScheme.primary.withValues(
-                            alpha: 0.08,
-                          ),
-                          child: const Center(
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                        errorWidget: (_, _, _) =>
-                            _PlaceholderImage(theme: theme),
-                      )
-                    : _PlaceholderImage(theme: theme),
-              ),
+            AspectRatio(
+              aspectRatio: 1.1,
+              child: listing.imageUrls.isNotEmpty
+                  ? _ListingImage(
+                      imagePath: listing.imageUrls.first,
+                      theme: theme,
+                    )
+                  : _PlaceholderImage(theme: theme),
             ),
 
-            Padding(
-              padding: const EdgeInsets.all(10),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    listing.title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      listing.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    listing.sellerName,
-                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 6),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'GH₵ ${listing.price.toStringAsFixed(2)}',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 13,
-                          color: theme.colorScheme.primary,
-                        ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      "KSh ${listing.price.toStringAsFixed(0)}",
+                      style: TextStyle(
+                        color: theme.colorScheme.primary,
+                        fontWeight: FontWeight.w600,
                       ),
-                      if (isOwner)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(
-                              alpha: 0.1,
-                            ),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Yours',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                    ],
-                  ),
-                ],
+                    ),
+
+                    const Spacer(),
+
+                    Text(
+                      listing.sellerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ListingImage extends StatelessWidget {
+  final String imagePath;
+  final ThemeData theme;
+
+  const _ListingImage({required this.imagePath, required this.theme});
+
+  @override
+  Widget build(BuildContext context) {
+    final isNetwork =
+        imagePath.startsWith('http://') || imagePath.startsWith('https://');
+
+    debugPrint("Trying to load: $imagePath");
+
+    if (isNetwork) {
+      return Image.network(
+        imagePath,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) =>
+            _PlaceholderImage(theme: theme),
+      );
+    }
+
+    return Image.asset(
+      imagePath,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint("❌ Failed to load asset: $imagePath");
+        debugPrint(error.toString());
+        return _PlaceholderImage(theme: theme);
+      },
     );
   }
 }

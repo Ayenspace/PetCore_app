@@ -2,13 +2,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../models/marketplace_model.dart';
+import '../models/marketplace_order_model.dart';
 import '../services/marketplace.dart';
 
 class MarketplaceProvider extends ChangeNotifier {
   final _service = MarketplaceService();
 
   List<MarketplaceModel> _listings = [];
+  List<MarketplaceOrderModel> _orders = [];
   StreamSubscription? _sub;
+  StreamSubscription? _ordersSub;
 
   bool _loading = false;
   String? _error;
@@ -21,6 +24,7 @@ class MarketplaceProvider extends ChangeNotifier {
   ListingCategory? get categoryFilter => _categoryFilter;
 
   List<MarketplaceModel> get listings => _listings;
+  List<MarketplaceOrderModel> get orders => _orders;
 
   List<MarketplaceModel> get filtered {
     var list = _listings.where((l) => l.isAvailable).toList();
@@ -56,6 +60,14 @@ class MarketplaceProvider extends ChangeNotifier {
     _sub?.cancel();
     _sub = _service.streamListings().listen((data) {
       _listings = data;
+      notifyListeners();
+    });
+  }
+
+  void listenToOrders(String userId) {
+    _ordersSub?.cancel();
+    _ordersSub = _service.streamOrders(userId).listen((data) {
+      _orders = data;
       notifyListeners();
     });
   }
@@ -119,6 +131,20 @@ class MarketplaceProvider extends ChangeNotifier {
     int index,
   ) => _service.uploadListingImage(sellerId, listingId, file, index);
 
+  Future<bool> placeOrder(MarketplaceOrderModel order) async {
+    _error = null;
+    _setLoading(true);
+    try {
+      final success = await _service.addOrder(order);
+      _setLoading(false);
+      return success;
+    } catch (e) {
+      _error = 'Failed to place order: $e';
+      _setLoading(false);
+      return false;
+    }
+  }
+
   void _setLoading(bool value) {
     _loading = value;
     notifyListeners();
@@ -127,6 +153,7 @@ class MarketplaceProvider extends ChangeNotifier {
   @override
   void dispose() {
     _sub?.cancel();
+    _ordersSub?.cancel();
     super.dispose();
   }
 }

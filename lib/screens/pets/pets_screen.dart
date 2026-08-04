@@ -33,16 +33,27 @@ class _PetsScreenState extends State<PetsScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('My Pets', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'My Pets',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
-          IconButton(icon: const Icon(Icons.add), onPressed: () => context.push('/pets/add')),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => context.push('/pets/add'),
+          ),
         ],
       ),
       bottomNavigationBar: _BottomNav(currentIndex: 1),
       floatingActionButton: pets.isNotEmpty
-          ? FloatingActionButton(onPressed: () => context.push('/pets/add'), child: const Icon(Icons.add))
+          ? FloatingActionButton(
+              onPressed: () => context.push('/pets/add'),
+              child: const Icon(Icons.add),
+            )
           : null,
-      body: pets.isEmpty ? _buildEmptyState(context) : _buildPetList(context, pets),
+      body: pets.isEmpty
+          ? _buildEmptyState(context)
+          : _buildPetList(context, pets),
     );
   }
 
@@ -54,9 +65,15 @@ class _PetsScreenState extends State<PetsScreen> {
         children: [
           Icon(Icons.pets, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
-          Text('No pets yet', style: theme.textTheme.titleLarge?.copyWith(color: Colors.grey)),
+          Text(
+            'No pets yet',
+            style: theme.textTheme.titleLarge?.copyWith(color: Colors.grey),
+          ),
           const SizedBox(height: 8),
-          Text('Add your first pet to get started', style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey)),
+          Text(
+            'Add your first pet to get started',
+            style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey),
+          ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () => context.push('/pets/add'),
@@ -91,17 +108,33 @@ class _PetCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           leading: CircleAvatar(
             radius: 28,
             backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
-            backgroundImage: pet.photoUrl != null ? NetworkImage(pet.photoUrl!) : null,
-            child: pet.photoUrl == null ? Icon(Icons.pets, color: theme.colorScheme.primary, size: 28) : null,
+            backgroundImage: pet.photoUrl != null
+                ? NetworkImage(pet.photoUrl!)
+                : null,
+            child: pet.photoUrl == null
+                ? Icon(Icons.pets, color: theme.colorScheme.primary, size: 28)
+                : null,
           ),
-          title: Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          title: Text(
+            pet.name,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
           subtitle: Text(
             '${pet.species}${pet.breed != null ? ' • ${pet.breed}' : ''} • ${pet.age} yr${pet.age != 1 ? 's' : ''}',
             style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
@@ -110,16 +143,23 @@ class _PetCard extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
-                  color: pet.gender.toLowerCase() == 'male' ? Colors.blue.shade50 : Colors.pink.shade50,
+                  color: pet.gender.toLowerCase() == 'male'
+                      ? Colors.blue.shade50
+                      : Colors.pink.shade50,
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   pet.gender,
                   style: TextStyle(
                     fontSize: 12,
-                    color: pet.gender.toLowerCase() == 'male' ? Colors.blue : Colors.pink,
+                    color: pet.gender.toLowerCase() == 'male'
+                        ? Colors.blue
+                        : Colors.pink,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -173,18 +213,31 @@ class _PetFormState extends State<_PetForm> {
 
   bool get _isEditing => widget.pet != null;
 
-  final _species = ['Dog', 'Cat', 'Bird', 'Rabbit', 'Fish', 'Hamster', 'Reptile', 'Other'];
+  final _species = [
+    'Dog',
+    'Cat',
+    'Bird',
+    'Rabbit',
+    'Fish',
+    'Hamster',
+    'Reptile',
+    'Other',
+  ];
 
   @override
   void initState() {
     super.initState();
     _nameController = TextEditingController(text: widget.pet?.name ?? '');
     _breedController = TextEditingController(text: widget.pet?.breed ?? '');
-    _weightController = TextEditingController(text: widget.pet?.weight?.toString() ?? '');
+    _weightController = TextEditingController(
+      text: widget.pet?.weight?.toString() ?? '',
+    );
     if (widget.pet != null) {
       _gender = widget.pet!.gender;
       _dateOfBirth = widget.pet!.dateOfBirth;
-      _selectedSpecies = _species.contains(widget.pet!.species) ? widget.pet!.species : 'Other';
+      _selectedSpecies = _species.contains(widget.pet!.species)
+          ? widget.pet!.species
+          : 'Other';
     }
   }
 
@@ -197,7 +250,10 @@ class _PetFormState extends State<_PetForm> {
   }
 
   Future<void> _pickPhoto() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
     if (picked != null) setState(() => _pickedImage = picked);
   }
 
@@ -223,8 +279,21 @@ class _PetFormState extends State<_PetForm> {
       // Upload photo if picked
       String? photoUrl = widget.pet?.photoUrl;
       if (_pickedImage != null) {
-        final petId = widget.pet?.id ?? DateTime.now().millisecondsSinceEpoch.toString();
-        photoUrl = await _uploadPetPhoto(uid, petId, _pickedImage!);
+        try {
+          final petId =
+              widget.pet?.id ??
+              DateTime.now().millisecondsSinceEpoch.toString();
+          photoUrl = await _uploadPetPhoto(uid, petId, _pickedImage!);
+        } catch (e) {
+          debugPrint('Failed to upload pet photo: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Photo upload failed, saving pet without image.'),
+              ),
+            );
+          }
+        }
       }
 
       final pet = PetModel(
@@ -232,7 +301,9 @@ class _PetFormState extends State<_PetForm> {
         ownerId: uid,
         name: _nameController.text.trim(),
         species: _selectedSpecies ?? 'Other',
-        breed: _breedController.text.trim().isEmpty ? null : _breedController.text.trim(),
+        breed: _breedController.text.trim().isEmpty
+            ? null
+            : _breedController.text.trim(),
         gender: _gender,
         dateOfBirth: _dateOfBirth,
         weight: double.tryParse(_weightController.text),
@@ -240,11 +311,15 @@ class _PetFormState extends State<_PetForm> {
         createdAt: widget.pet?.createdAt ?? DateTime.now(),
       );
 
-      final success = _isEditing ? await petProvider.updatePet(pet) : await petProvider.addPet(pet);
+      final success = _isEditing
+          ? await petProvider.updatePet(pet)
+          : await petProvider.addPet(pet);
       if (success && mounted) context.pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -260,7 +335,10 @@ class _PetFormState extends State<_PetForm> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Pet' : 'Add Pet', style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          _isEditing ? 'Edit Pet' : 'Add Pet',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -277,20 +355,39 @@ class _PetFormState extends State<_PetForm> {
                     children: [
                       CircleAvatar(
                         radius: 50,
-                        backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                        backgroundColor: theme.colorScheme.primary.withValues(
+                          alpha: 0.1,
+                        ),
                         backgroundImage: _pickedImage != null
-                            ? (kIsWeb ? NetworkImage(_pickedImage!.path) : FileImage(File(_pickedImage!.path))) as ImageProvider
-                            : (widget.pet?.photoUrl != null ? NetworkImage(widget.pet!.photoUrl!) as ImageProvider : null),
-                        child: (_pickedImage == null && widget.pet?.photoUrl == null)
-                            ? Icon(Icons.pets, size: 50, color: theme.colorScheme.primary)
+                            ? (kIsWeb
+                                      ? NetworkImage(_pickedImage!.path)
+                                      : FileImage(File(_pickedImage!.path)))
+                                  as ImageProvider
+                            : (widget.pet?.photoUrl != null
+                                  ? NetworkImage(widget.pet!.photoUrl!)
+                                        as ImageProvider
+                                  : null),
+                        child:
+                            (_pickedImage == null &&
+                                widget.pet?.photoUrl == null)
+                            ? Icon(
+                                Icons.pets,
+                                size: 50,
+                                color: theme.colorScheme.primary,
+                              )
                             : null,
                       ),
                       Positioned(
-                        bottom: 0, right: 0,
+                        bottom: 0,
+                        right: 0,
                         child: CircleAvatar(
                           radius: 16,
                           backgroundColor: theme.colorScheme.primary,
-                          child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                          child: const Icon(
+                            Icons.camera_alt,
+                            size: 16,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ],
@@ -302,15 +399,25 @@ class _PetFormState extends State<_PetForm> {
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Pet Name', prefixIcon: Icon(Icons.pets)),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a name' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Pet Name',
+                  prefixIcon: Icon(Icons.pets),
+                ),
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Please enter a name'
+                    : null,
               ),
               const SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
                 initialValue: _selectedSpecies,
-                decoration: const InputDecoration(labelText: 'Species', prefixIcon: Icon(Icons.category_outlined)),
-                items: _species.map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                decoration: const InputDecoration(
+                  labelText: 'Species',
+                  prefixIcon: Icon(Icons.category_outlined),
+                ),
+                items: _species
+                    .map((s) => DropdownMenuItem(value: s, child: Text(s)))
+                    .toList(),
                 onChanged: (v) => setState(() => _selectedSpecies = v),
                 validator: (v) => v == null ? 'Please select a species' : null,
               ),
@@ -319,37 +426,55 @@ class _PetFormState extends State<_PetForm> {
               TextFormField(
                 controller: _breedController,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Breed (optional)', prefixIcon: Icon(Icons.info_outline)),
+                decoration: const InputDecoration(
+                  labelText: 'Breed (optional)',
+                  prefixIcon: Icon(Icons.info_outline),
+                ),
               ),
               const SizedBox(height: 16),
 
               // Gender selector
-              Text('Gender', style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey)),
+              Text(
+                'Gender',
+                style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),
+              ),
               const SizedBox(height: 8),
               Row(
-                children: ['Male', 'Female'].map((g) => Expanded(
-                  child: GestureDetector(
-                    onTap: () => setState(() => _gender = g),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: EdgeInsets.only(right: g == 'Male' ? 8 : 0),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        color: _gender == g ? theme.colorScheme.primary : Colors.transparent,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _gender == g ? theme.colorScheme.primary : Colors.grey.shade300),
-                      ),
-                      child: Text(
-                        g,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: _gender == g ? Colors.white : Colors.grey,
-                          fontWeight: FontWeight.w600,
+                children: ['Male', 'Female']
+                    .map(
+                      (g) => Expanded(
+                        child: GestureDetector(
+                          onTap: () => setState(() => _gender = g),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            margin: EdgeInsets.only(right: g == 'Male' ? 8 : 0),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: _gender == g
+                                  ? theme.colorScheme.primary
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(
+                                color: _gender == g
+                                    ? theme.colorScheme.primary
+                                    : Colors.grey.shade300,
+                              ),
+                            ),
+                            child: Text(
+                              g,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: _gender == g
+                                    ? Colors.white
+                                    : Colors.grey,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                )).toList(),
+                    )
+                    .toList(),
               ),
               const SizedBox(height: 16),
 
@@ -359,7 +484,8 @@ class _PetFormState extends State<_PetForm> {
                 child: AbsorbPointer(
                   child: TextFormField(
                     key: ValueKey(_dateOfBirth),
-                    initialValue: '${_dateOfBirth.day}/${_dateOfBirth.month}/${_dateOfBirth.year}',
+                    initialValue:
+                        '${_dateOfBirth.day}/${_dateOfBirth.month}/${_dateOfBirth.year}',
                     decoration: const InputDecoration(
                       labelText: 'Date of Birth',
                       prefixIcon: Icon(Icons.cake_outlined),
@@ -372,7 +498,9 @@ class _PetFormState extends State<_PetForm> {
 
               TextFormField(
                 controller: _weightController,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
                 decoration: const InputDecoration(
                   labelText: 'Weight in kg (optional)',
                   prefixIcon: Icon(Icons.monitor_weight_outlined),
@@ -385,8 +513,21 @@ class _PetFormState extends State<_PetForm> {
                 child: ElevatedButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : Text(_isEditing ? 'Save Changes' : 'Add Pet', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Text(
+                          _isEditing ? 'Save Changes' : 'Add Pet',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -417,20 +558,52 @@ class _BottomNav extends StatelessWidget {
       selectedIndex: currentIndex,
       onDestinationSelected: (index) {
         switch (index) {
-          case 0: context.go('/home'); break;
-          case 1: context.go('/pets'); break;
-          case 2: context.go('/appointments'); break;
-          case 3: context.go('/marketplace'); break;
-          case 4: context.go('/profile'); break;
+          case 0:
+            context.go('/home');
+            break;
+          case 1:
+            context.go('/pets');
+            break;
+          case 2:
+            context.go('/appointments');
+            break;
+          case 3:
+            context.go('/marketplace');
+            break;
+          case 4:
+            context.go('/profile');
+            break;
         }
       },
-      indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+      indicatorColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.15),
       destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.pets_outlined), selectedIcon: Icon(Icons.pets), label: 'Pets'),
-        NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Appointments'),
-        NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Market'),
-        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.pets_outlined),
+          selectedIcon: Icon(Icons.pets),
+          label: 'Pets',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.calendar_today_outlined),
+          selectedIcon: Icon(Icons.calendar_today),
+          label: 'Appointments',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.storefront_outlined),
+          selectedIcon: Icon(Icons.storefront),
+          label: 'Market',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
       ],
     );
   }

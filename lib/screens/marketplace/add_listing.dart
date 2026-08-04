@@ -1,8 +1,4 @@
-import 'dart:io';
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/marketplace_model.dart';
@@ -22,12 +18,19 @@ class _AddListingScreenState extends State<AddListingScreen> {
   final _descriptionController = TextEditingController();
   final _priceController = TextEditingController();
   final _locationController = TextEditingController();
-  final ImagePicker _picker = ImagePicker();
+
+  static const List<String> _assetImageOptions = [
+    'assets/images/marketplace/cheetah cat.jfif',
+    'assets/images/marketplace/german shephard.jfif',
+    'assets/images/marketplace/maccoon cat.avif',
+    'assets/images/marketplace/pink collar.jfif',
+    'assets/images/marketplace/rabbit.jfif',
+  ];
 
   ListingCategory _category = ListingCategory.other;
   bool _isAvailable = true;
   bool _saving = false;
-  final List<XFile> _pickedImages = [];
+  String _selectedAssetImage = _assetImageOptions.first;
 
   @override
   void initState() {
@@ -42,15 +45,6 @@ class _AddListingScreenState extends State<AddListingScreen> {
     _priceController.dispose();
     _locationController.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickImages() async {
-    final images = await _picker.pickMultiImage(imageQuality: 80);
-
-    setState(() {
-      final remaining = 4 - _pickedImages.length;
-      _pickedImages.addAll(images.take(remaining));
-    });
   }
 
   Future<void> _saveListing() async {
@@ -72,30 +66,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
     try {
       final marketplaceProvider = context.read<MarketplaceProvider>();
       final listingId = marketplaceProvider.generateListingId();
-      final imageUrls = <String>[];
-
-      for (var i = 0; i < _pickedImages.length; i += 1) {
-        try {
-          debugPrint(
-            'AddListingScreen: uploading image ${i + 1}/${_pickedImages.length}',
-          );
-          final url = await marketplaceProvider.uploadImage(
-            user.id,
-            listingId,
-            _pickedImages[i],
-            i,
-          );
-          imageUrls.add(url);
-        } catch (e) {
-          if (!mounted) return;
-          debugPrint('AddListingScreen image upload failed: $e');
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('Image upload failed: $e')));
-          setState(() => _saving = false);
-          return;
-        }
-      }
+      final imageUrls = <String>[_selectedAssetImage];
 
       final price = double.tryParse(_priceController.text.trim()) ?? 0;
       final listing = MarketplaceModel(
@@ -165,7 +136,7 @@ class _AddListingScreenState extends State<AddListingScreen> {
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 18),
-              _buildImagePicker(theme),
+              _buildAssetPicker(theme),
               const SizedBox(height: 24),
               TextFormField(
                 controller: _titleController,
@@ -277,87 +248,81 @@ class _AddListingScreenState extends State<AddListingScreen> {
     );
   }
 
-  Widget _buildImagePicker(ThemeData theme) {
+  Widget _buildAssetPicker(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Photos', style: TextStyle(fontWeight: FontWeight.w600)),
+        const Text(
+          'Choose a photo',
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
         const SizedBox(height: 10),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            ..._pickedImages.asMap().entries.map(
-              (entry) => _buildImageTile(entry.key, entry.value, theme),
-            ),
-            if (_pickedImages.length < 4) _buildAddImageTile(theme),
-          ],
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 3,
+          crossAxisSpacing: 12,
+          mainAxisSpacing: 12,
+          childAspectRatio: 1,
+          children: _assetImageOptions.map((assetPath) {
+            final isSelected = assetPath == _selectedAssetImage;
+            return GestureDetector(
+              onTap: () => setState(() => _selectedAssetImage = assetPath),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.asset(
+                      assetPath,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Container(
+                        color: Colors.grey.shade100,
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          color: Colors.grey.shade400,
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Positioned.fill(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: theme.colorScheme.primary,
+                              width: 2,
+                            ),
+                          ),
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: CircleAvatar(
+                                radius: 12,
+                                backgroundColor: theme.colorScheme.primary,
+                                child: const Icon(
+                                  Icons.check,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
         ),
         const SizedBox(height: 8),
         Text(
-          'Add up to 4 photos',
+          'Pick one image from your app assets',
           style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
         ),
       ],
-    );
-  }
-
-  Widget _buildImageTile(int index, XFile xFile, ThemeData theme) {
-    return Stack(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: kIsWeb
-              ? Image.network(
-                  xFile.path,
-                  width: 88,
-                  height: 88,
-                  fit: BoxFit.cover,
-                )
-              : Image.file(
-                  File(xFile.path),
-                  width: 88,
-                  height: 88,
-                  fit: BoxFit.cover,
-                ),
-        ),
-        Positioned(
-          top: 4,
-          right: 4,
-          child: GestureDetector(
-            onTap: () => setState(() => _pickedImages.removeAt(index)),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.all(4),
-              child: const Icon(Icons.close, size: 16, color: Colors.white),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAddImageTile(ThemeData theme) {
-    return GestureDetector(
-      onTap: _pickImages,
-      child: Container(
-        width: 88,
-        height: 88,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: Colors.grey.shade300),
-        ),
-        child: Center(
-          child: Icon(
-            Icons.add_a_photo_outlined,
-            size: 28,
-            color: theme.colorScheme.primary,
-          ),
-        ),
-      ),
     );
   }
 

@@ -1,0 +1,46 @@
+{
+  "rules": {
+    ".read": "auth != null",
+    ".write": "auth != null",
+    "users": {
+      "$uid": {
+        ".read": "$uid === auth.uid",
+        ".write": "$uid === auth.uid"
+      }
+    },
+    "pets": {
+      "$ownerId": {
+        ".read": "auth != null",
+        ".write": "$ownerId === auth.uid"
+      }
+    },
+    "marketplace": {
+      ".read": "auth != null",
+      ".write": "auth != null"
+    },
+    "appointments": {
+      "$ownerId": {
+        ".read": "$ownerId === auth.uid",
+        ".write": "$ownerId === auth.uid"
+      }
+    },
+    "reminders": {
+      "$ownerId": {
+        ".read": "$ownerId === auth.uid",
+        ".write": "$ownerId === auth.uid"
+      }
+    },
+    "medical_records": {
+      "$ownerId": {
+        ".read": "$ownerId === auth.uid",
+        ".write": "$ownerId === auth.uid"
+      }
+    },
+    "vaccinations": {
+      "$ownerId": {
+        ".read": "$ownerId === auth.uid",
+        ".write": "$ownerId === auth.uid"
+      }
+    }
+  }
+}
