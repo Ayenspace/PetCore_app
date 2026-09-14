@@ -119,15 +119,65 @@ class AppointmentDetailsScreen extends StatelessWidget {
               label: Text(
                 appointment.status.name.toUpperCase(),
               ),
+              backgroundColor: appointment.status == AppointmentStatus.upcoming
+                  ? Colors.blue.shade50
+                  : appointment.status == AppointmentStatus.completed
+                      ? Colors.green.shade50
+                      : appointment.status == AppointmentStatus.overdue
+                          ? Colors.orange.shade50
+                          : Colors.red.shade50,
               avatar: Icon(
                 appointment.status == AppointmentStatus.upcoming
                     ? Icons.schedule
                     : appointment.status == AppointmentStatus.completed
                         ? Icons.check_circle
-                        : Icons.cancel,
+                        : appointment.status == AppointmentStatus.overdue
+                            ? Icons.warning_amber_rounded
+                            : Icons.cancel,
+                color: appointment.status == AppointmentStatus.upcoming
+                    ? Colors.blue
+                    : appointment.status == AppointmentStatus.completed
+                        ? Colors.green
+                        : appointment.status == AppointmentStatus.overdue
+                            ? Colors.orange
+                            : Colors.red,
               ),
             ),
           ),
+
+          if (appointment.status == AppointmentStatus.upcoming ||
+              appointment.status == AppointmentStatus.overdue) ...[  
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    onPressed: () async {
+                      await context.read<AppointmentProvider>().updateAppointment(
+                            appointment.copyWith(status: AppointmentStatus.completed));
+                      if (context.mounted) context.pop();
+                    },
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    label: const Text('Mark Complete', style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                    onPressed: () async {
+                      await context.read<AppointmentProvider>().updateAppointment(
+                            appointment.copyWith(status: AppointmentStatus.cancelled));
+                      if (context.mounted) context.pop();
+                    },
+                    icon: const Icon(Icons.close),
+                    label: const Text('Cancel'),
+                  ),
+                ),
+              ],
+            ),
+          ],
 
           const SizedBox(height: 30),
                     ElevatedButton.icon(

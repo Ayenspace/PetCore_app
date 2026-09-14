@@ -1,4 +1,4 @@
-enum AppointmentStatus { upcoming, completed, cancelled }
+enum AppointmentStatus { upcoming, completed, cancelled, overdue }
 
 class AppointmentModel {
   final String id;

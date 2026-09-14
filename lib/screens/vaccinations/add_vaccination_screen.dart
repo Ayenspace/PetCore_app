@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/pet_model.dart';
+import '../../models/user_model.dart';
 import '../../models/vaccination_model.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/pet_providers.dart';
 import '../../providers/vaccination_provider.dart';
+import '../../services/pet_service.dart';
+import '../../services/vet_service.dart';
 
 class AddVaccinationScreen extends StatefulWidget {
   const AddVaccinationScreen({super.key});
@@ -16,10 +20,19 @@ class AddVaccinationScreen extends StatefulWidget {
 class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
   final _formKey = GlobalKey<FormState>();
   final _vaccineController = TextEditingController();
-  final _vetController = TextEditingController();
   final _notesController = TextEditingController();
 
+  final _vetService = VetService();
+  final _petService = PetService();
+  StreamSubscription? _petSub;
+
+  List<PetModel> _pets = [];
+  List<UserModel> _vets = [];
+  bool _loadingPets = true;
+  bool _loadingVets = true;
+
   PetModel? _selectedPet;
+  UserModel? _selectedVet;
   DateTime _dateGiven = DateTime.now();
   DateTime? _nextDueDate;
 
@@ -29,9 +42,44 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadPets();
+    _loadVets();
+  }
+
+  void _loadPets() {
+    final ownerId = context.read<AppAuthProvider>().user!.id;
+    _petSub = _petService.petsStream(ownerId).listen((pets) {
+      if (!mounted) return;
+      setState(() {
+        _pets = pets;
+        _loadingPets = false;
+      });
+    }, onError: (_) {
+      if (!mounted) return;
+      setState(() => _loadingPets = false);
+    });
+  }
+
+  Future<void> _loadVets() async {
+    try {
+      final vets = await _vetService.loadVets();
+      if (!mounted) return;
+      setState(() {
+        _vets = vets;
+        _loadingVets = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadingVets = false);
+    }
+  }
+
+  @override
   void dispose() {
+    _petSub?.cancel();
     _vaccineController.dispose();
-    _vetController.dispose();
     _notesController.dispose();
     super.dispose();
   }
@@ -65,6 +113,13 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
       return;
     }
 
+    if (_selectedVet == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a veterinarian')),
+      );
+      return;
+    }
+
     final uid = context.read<AppAuthProvider>().user!.id;
     final vaccination = VaccinationModel(
       id: '',
@@ -72,7 +127,7 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
       petId: _selectedPet!.id,
       petName: _selectedPet!.name,
       vaccineName: _vaccineController.text.trim(),
-      vetName: _vetController.text.trim(),
+      vetName: _selectedVet!.name,
       dateGiven: _dateGiven,
       nextDueDate: _nextDueDate,
       notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
@@ -85,7 +140,6 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pets = context.watch<PetProvider>().pets;
     final provider = context.watch<VaccinationProvider>();
 
     return Scaffold(
@@ -99,15 +153,19 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              DropdownButtonFormField<PetModel>(
-                decoration: const InputDecoration(
-                  labelText: 'Select Pet',
-                  prefixIcon: Icon(Icons.pets),
-                ),
-                items: pets.map((p) => DropdownMenuItem(value: p, child: Text(p.name))).toList(),
-                onChanged: (p) => setState(() => _selectedPet = p),
-                validator: (v) => v == null ? 'Please select a pet' : null,
-              ),
+              _loadingPets
+                  ? const Center(child: CircularProgressIndicator())
+                  : DropdownButtonFormField<PetModel>(
+                      initialValue: _selectedPet,
+                      hint: const Text('Select a pet'),
+                      decoration: const InputDecoration(
+                        labelText: 'Select Pet',
+                        prefixIcon: Icon(Icons.pets),
+                      ),
+                      items: _pets.map((p) => DropdownMenuItem(value: p, child: Text(p.name))).toList(),
+                      onChanged: (p) => setState(() => _selectedPet = p),
+                      validator: (v) => v == null ? 'Please select a pet' : null,
+                    ),
               const SizedBox(height: 16),
 
               // Vaccine name with quick-select chips
@@ -134,15 +192,26 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
               ),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _vetController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Veterinarian',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Please enter the vet\'s name' : null,
-              ),
+              _loadingVets
+                  ? const Center(child: CircularProgressIndicator())
+                  : DropdownButtonFormField<UserModel>(
+                      initialValue: _selectedVet,
+                      hint: const Text('Select a veterinarian'),
+                      decoration: const InputDecoration(
+                        labelText: 'Veterinarian',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                      items: _vets.map((vet) => DropdownMenuItem(
+                        value: vet,
+                        child: Text(
+                          vet.clinicName != null && vet.clinicName!.isNotEmpty
+                              ? '${vet.name} • ${vet.clinicName}'
+                              : vet.name,
+                        ),
+                      )).toList(),
+                      onChanged: (vet) => setState(() => _selectedVet = vet),
+                      validator: (v) => v == null ? 'Please select a veterinarian' : null,
+                    ),
               const SizedBox(height: 16),
 
               // Date given

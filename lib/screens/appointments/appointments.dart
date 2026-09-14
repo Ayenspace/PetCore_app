@@ -78,7 +78,9 @@ class _AppointmentCard extends StatelessWidget {
         ? Colors.blue
         : appointment.status == AppointmentStatus.completed
             ? Colors.green
-            : Colors.red;
+            : appointment.status == AppointmentStatus.overdue
+                ? Colors.orange
+                : Colors.red;
 
     return GestureDetector(
       onTap: () => context.push('/appointments/${appointment.id}'),

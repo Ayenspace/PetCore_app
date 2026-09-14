@@ -5,6 +5,7 @@ import '../../models/vaccination_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/pet_providers.dart';
 import '../../providers/vaccination_provider.dart';
+import '../../widgets/app_bottom_nav.dart';
 
 class VaccinationsScreen extends StatefulWidget {
   const VaccinationsScreen({super.key});
@@ -45,6 +46,7 @@ class _VaccinationsScreenState extends State<VaccinationsScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: -1),
       floatingActionButton: provider.vaccinations.isNotEmpty
           ? FloatingActionButton(
               onPressed: () => context.push('/vaccinations/add'),

@@ -39,8 +39,7 @@ class VaccinationProvider extends ChangeNotifier {
   Future<bool> addVaccination(VaccinationModel v) async {
     _setLoading(true);
     try {
-      final newV = await _service.addVaccination(v);
-      _vaccinations.insert(0, newV);
+      await _service.addVaccination(v);
       _error = null;
       return true;
     } catch (e) {

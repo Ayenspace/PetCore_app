@@ -28,6 +28,9 @@ class AppointmentService {
   Future<void> updateAppointment(AppointmentModel appointment) =>
       _ref(appointment.ownerId).child(appointment.id).update(appointment.toMap());
 
+  Future<void> updateStatus(String ownerId, String id, AppointmentStatus status) =>
+      _ref(ownerId).child(id).update({'status': status.name});
+
   Future<void> deleteAppointment(String ownerId, String appointmentId) =>
       _ref(ownerId).child(appointmentId).remove();
 

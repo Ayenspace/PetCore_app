@@ -49,7 +49,7 @@ class AppAuthProvider extends ChangeNotifier {
   }) async {
     _setLoading(true);
     try {
-      _user = await _service.register(
+      final user = await _service.register(
         name: name,
         email: email,
         password: password,
@@ -57,8 +57,10 @@ class AppAuthProvider extends ChangeNotifier {
         clinicName: clinicName,
         specialization: specialization,
       );
+      _user = user;
       _status = AuthStatus.authenticated;
       _error = null;
+      notifyListeners();
       return true;
     } catch (e) {
       _error = _parseError(e);
@@ -71,9 +73,11 @@ class AppAuthProvider extends ChangeNotifier {
   Future<bool> login({required String email, required String password}) async {
     _setLoading(true);
     try {
-      _user = await _service.login(email: email, password: password);
+      final user = await _service.login(email: email, password: password);
+      _user = user;
       _status = AuthStatus.authenticated;
       _error = null;
+      notifyListeners();
       return true;
     } catch (e) {
       _error = _parseError(e);

@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 
+import '../providers/auth_provider.dart';
 import '../screens/splash/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/authentication/welcome_screen.dart';
@@ -29,9 +30,42 @@ import '../screens/notifications/notifications_screen.dart';
 import '../screens/repots/reports_screen.dart';
 
 class AppRouter {
-  static final router = GoRouter(
-    initialLocation: '/splash',
-    routes: [
+  static GoRouter router(AppAuthProvider auth) {
+    return GoRouter(
+      initialLocation: '/splash',
+      refreshListenable: auth,
+      redirect: (context, state) {
+        final location = state.matchedLocation;
+        final authRoutes = {
+          '/splash',
+          '/onboarding',
+          '/welcome',
+          '/login',
+          '/register',
+          '/forgot-password',
+        };
+
+        if (auth.status == AuthStatus.initial) {
+          return location == '/splash' ? null : '/splash';
+        }
+
+        if (auth.status == AuthStatus.authenticated) {
+          if (location == '/splash' || authRoutes.contains(location)) {
+            return '/home';
+          }
+          return null;
+        }
+
+        if (auth.status == AuthStatus.unauthenticated) {
+          if (location == '/splash' || location == '/welcome' || location == '/login' || location == '/register' || location == '/forgot-password' || location == '/onboarding') {
+            return null;
+          }
+          return '/welcome';
+        }
+
+        return null;
+      },
+      routes: [
       GoRoute(path: '/splash', builder: (c, s) => const SplashScreen()),
       GoRoute(path: '/onboarding', builder: (c, s) => const OnboardingScreen()),
       GoRoute(path: '/welcome', builder: (c, s) => const WelcomeScreen()),
@@ -126,5 +160,6 @@ class AppRouter {
         builder: (c, s) => const PdfPreviewScreen(),
       ),
     ],
-  );
+    );
+  }
 }

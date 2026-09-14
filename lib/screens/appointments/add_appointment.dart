@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'dart:async';
+
 import '../../models/appointment_model.dart';
 import '../../models/pet_model.dart';
 import '../../models/user_model.dart';
 import '../../providers/appointment_provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/pet_providers.dart';
+import '../../services/pet_service.dart';
 import '../../services/vet_service.dart';
 
 class AddAppointmentScreen extends StatefulWidget {
@@ -20,13 +22,19 @@ class AddAppointmentScreen extends StatefulWidget {
 class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  final _locationController = TextEditingController();
   final _notesController = TextEditingController();
 
   final _vetService = VetService();
+  final _petService = PetService();
+  StreamSubscription? _petSub;
+
+  List<PetModel> _pets = [];
   List<UserModel> _vets = [];
+  List<String> _locations = [];
+  String? _selectedLocation;
   UserModel? _selectedVet;
   PetModel? _selectedPet;
+  bool _loadingPets = true;
 
   String _selectedService = "General Check-up";
 
@@ -50,14 +58,36 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   void initState() {
     super.initState();
     _loadVets();
+    _loadPets();
+  }
+
+  void _loadPets() {
+    final ownerId = context.read<AppAuthProvider>().user!.id;
+    _petSub = _petService.petsStream(ownerId).listen((pets) {
+      if (!mounted) return;
+      setState(() {
+        _pets = pets;
+        _loadingPets = false;
+      });
+    }, onError: (_) {
+      if (!mounted) return;
+      setState(() => _loadingPets = false);
+    });
   }
 
   Future<void> _loadVets() async {
     try {
       final vets = await _vetService.loadVets();
       if (!mounted) return;
+      final locations = vets
+          .map((v) => v.clinicName ?? '')
+          .where((a) => a.isNotEmpty)
+          .toSet()
+          .toList()
+        ..sort();
       setState(() {
         _vets = vets;
+        _locations = locations;
         _loadingVets = false;
       });
     } catch (e) {
@@ -71,7 +101,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
   @override
   void dispose() {
-    _locationController.dispose();
+    _petSub?.cancel();
     _notesController.dispose();
     super.dispose();
   }
@@ -107,13 +137,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   Future<void> _saveAppointment() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedPet == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Please select a pet.")));
-      return;
-    }
-
     if (_selectedDate == null || _selectedTime == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please select date and time.")),
@@ -123,9 +146,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
     setState(() => _saving = true);
 
-    final auth = context.read<AppAuthProvider>();
-
-    final owner = auth.user!;
+    final owner = context.read<AppAuthProvider>().user!;
 
     final appointmentDateTime = DateTime(
       _selectedDate!.year,
@@ -135,14 +156,6 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       _selectedTime!.minute,
     );
 
-    if (_selectedVet == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please select a veterinarian.")),
-      );
-      setState(() => _saving = false);
-      return;
-    }
-
     final appointment = AppointmentModel(
       id: "",
       ownerId: owner.id,
@@ -150,38 +163,32 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       petName: _selectedPet!.name,
       service: _selectedService,
       vetName: _selectedVet!.name,
-      location: _locationController.text.trim(),
+      location: _selectedLocation,
       dateTime: appointmentDateTime,
       notes: _notesController.text.trim(),
       status: AppointmentStatus.upcoming,
       createdAt: DateTime.now(),
     );
 
-    final success = await context.read<AppointmentProvider>().addAppointment(
-      appointment,
-    );
-
-    setState(() => _saving = false);
-
-    if (!mounted) return;
-
-    if (success) {
+    try {
+      await context.read<AppointmentProvider>().addAppointment(appointment);
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Appointment added successfully.")),
       );
-
       context.pop();
-    } else {
+    } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Failed to save appointment.")),
+        SnackBar(content: Text("Failed to save appointment: $e")),
       );
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final pets = context.watch<PetProvider>().pets;
-
     return Scaffold(
       appBar: AppBar(title: const Text("Add Appointment")),
       body: SafeArea(
@@ -190,27 +197,53 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              DropdownButtonFormField<PetModel>(
-                initialValue: _selectedPet,
-                decoration: const InputDecoration(
-                  labelText: 'Select Pet',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.pets),
-                ),
-                items: pets.map((pet) {
-                  return DropdownMenuItem(
-                    value: pet,
-                    child: Text("${pet.name} (${pet.species})"),
-                  );
-                }).toList(),
-                onChanged: (pet) {
-                  setState(() {
-                    _selectedPet = pet;
-                  });
-                },
-                validator: (value) =>
-                    value == null ? 'Please select a pet' : null,
-              ),
+              // Pet first
+              _loadingPets
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : DropdownButtonFormField<PetModel>(
+                      initialValue: _selectedPet,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Pet',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.pets),
+                      ),
+                      hint: const Text('Select a pet'),
+                      items: _pets.map((pet) => DropdownMenuItem(
+                        value: pet,
+                        child: Text('${pet.name} (${pet.species})'),
+                      )).toList(),
+                      onChanged: (pet) => setState(() => _selectedPet = pet),
+                      validator: (v) => v == null ? 'Please select a pet' : null,
+                    ),
+
+              const SizedBox(height: 20),
+
+              // Location second
+              _loadingVets
+                  ? const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: Center(child: CircularProgressIndicator()),
+                    )
+                  : DropdownButtonFormField<String>(
+                      initialValue: _selectedLocation,
+                      decoration: const InputDecoration(
+                        labelText: 'Select Location',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on),
+                      ),
+                      hint: const Text('Select a location'),
+                      items: _locations
+                          .map((loc) => DropdownMenuItem(value: loc, child: Text(loc)))
+                          .toList(),
+                      onChanged: (loc) => setState(() {
+                        _selectedLocation = loc;
+                        _selectedVet = null;
+                      }),
+                      validator: (v) => v == null ? 'Please select a location' : null,
+                    ),
 
               const SizedBox(height: 20),
 
@@ -224,59 +257,34 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                 items: _services.map((service) {
                   return DropdownMenuItem(value: service, child: Text(service));
                 }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    _selectedService = value!;
-                  });
-                },
+                onChanged: (value) => setState(() => _selectedService = value!),
               ),
 
               const SizedBox(height: 20),
 
-              _loadingVets
-                  ? const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                  : DropdownButtonFormField<UserModel>(
-                      initialValue: _selectedVet,
-                      decoration: const InputDecoration(
-                        labelText: 'Veterinarian',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person),
-                      ),
-                      items: _vets.map((vet) {
-                        return DropdownMenuItem(
+              DropdownButtonFormField<UserModel>(
+                initialValue: _selectedVet,
+                decoration: const InputDecoration(
+                  labelText: 'Veterinarian',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+                hint: const Text('Select a veterinarian'),
+                items: _vets
+                    .where((v) =>
+                        _selectedLocation == null ||
+                        v.clinicName == _selectedLocation)
+                    .map((vet) => DropdownMenuItem(
                           value: vet,
                           child: Text(
                             vet.clinicName != null && vet.clinicName!.isNotEmpty
                                 ? '${vet.name} • ${vet.clinicName}'
                                 : vet.name,
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (vet) {
-                        setState(() => _selectedVet = vet);
-                      },
-                      validator: (value) =>
-                          value == null ? 'Please select a veterinarian' : null,
-                    ),
-
-              const SizedBox(height: 20),
-
-              TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Clinic / Location',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_on),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Enter clinic location';
-                  }
-                  return null;
-                },
+                        ))
+                    .toList(),
+                onChanged: (vet) => setState(() => _selectedVet = vet),
+                validator: (v) => v == null ? 'Please select a veterinarian' : null,
               ),
 
               const SizedBox(height: 20),

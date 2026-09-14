@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
@@ -152,6 +153,12 @@ class _EditListingScreenState extends State<EditListingScreen> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        leading: context.canPop()
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.pop(),
+              )
+            : null,
         title: const Text(
           'Edit Listing',
           style: TextStyle(fontWeight: FontWeight.bold),

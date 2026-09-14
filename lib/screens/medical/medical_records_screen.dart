@@ -5,6 +5,7 @@ import '../../models/medical_record.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/medical_provider.dart';
 import '../../providers/pet_providers.dart';
+import '../../widgets/app_bottom_nav.dart';
 
 class MedicalRecordsScreen extends StatefulWidget {
   const MedicalRecordsScreen({super.key});
@@ -42,6 +43,7 @@ class _MedicalRecordsScreenState extends State<MedicalRecordsScreen> {
           ),
         ],
       ),
+      bottomNavigationBar: const AppBottomNav(currentIndex: -1),
       floatingActionButton: records.isNotEmpty
           ? FloatingActionButton(
               onPressed: () => context.push('/medical/add'),

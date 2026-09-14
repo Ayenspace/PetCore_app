@@ -3,8 +3,10 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../services/authentication.dart';
+import '../../widgets/app_bottom_nav.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -13,13 +15,14 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = context.watch<AppAuthProvider>().user;
     final themeProvider = context.watch<ThemeProvider>();
+    final currencyProvider = context.watch<CurrencyProvider>();
     final isDark = themeProvider.themeMode == ThemeMode.dark;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings')),
+      bottomNavigationBar: const AppBottomNav(currentIndex: -1),
       body: ListView(
         children: [
-          // ── Account ──────────────────────────────────────────────
           _SectionHeader('Account'),
           ListTile(
             leading: CircleAvatar(
@@ -33,7 +36,6 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // ── Appearance ───────────────────────────────────────────
           _SectionHeader('Appearance'),
           SwitchListTile(
             secondary: Icon(isDark ? Icons.dark_mode : Icons.light_mode),
@@ -50,7 +52,16 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // ── Security ─────────────────────────────────────────────
+          _SectionHeader('Currency'),
+          ListTile(
+            leading: const Icon(Icons.attach_money),
+            title: const Text('Currency'),
+            subtitle: Text(currencyProvider.isKes ? 'Kenya Shillings (KSh)' : 'US Dollars (\$)'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => _showCurrencyPicker(context, currencyProvider),
+          ),
+          const Divider(height: 1),
+
           _SectionHeader('Security'),
           ListTile(
             leading: const Icon(Icons.lock_outline),
@@ -60,7 +71,6 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // ── Notifications ────────────────────────────────────────
           _SectionHeader('Notifications'),
           ListTile(
             leading: const Icon(Icons.notifications_outlined),
@@ -70,7 +80,6 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // ── About ────────────────────────────────────────────────
           _SectionHeader('About'),
           ListTile(
             leading: const Icon(Icons.info_outline),
@@ -91,7 +100,6 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          // ── Danger Zone ──────────────────────────────────────────
           _SectionHeader('Account Actions'),
           ListTile(
             leading: const Icon(Icons.logout, color: Colors.red),
@@ -100,6 +108,42 @@ class SettingsScreen extends StatelessWidget {
           ),
           const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  void _showCurrencyPicker(BuildContext context, CurrencyProvider provider) {
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const ListTile(title: Text('Choose Currency', style: TextStyle(fontWeight: FontWeight.bold))),
+            ListTile(
+              leading: Icon(
+                provider.currency == AppCurrency.kes ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: const Text('Kenya Shillings (KSh)'),
+              onTap: () {
+                provider.setCurrency(AppCurrency.kes);
+                Navigator.pop(context);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                provider.currency == AppCurrency.usd ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+              title: const Text('US Dollars (\$)'),
+              onTap: () {
+                provider.setCurrency(AppCurrency.usd);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }

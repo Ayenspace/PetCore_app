@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/pet_model.dart';
@@ -6,6 +7,7 @@ import '../../providers/appointment_provider.dart';
 import '../../providers/medical_provider.dart';
 import '../../providers/pet_providers.dart';
 import '../../providers/vaccination_provider.dart';
+import '../../services/pdfs.dart';
 
 class ReportsScreen extends StatelessWidget {
   const ReportsScreen({super.key});
@@ -13,100 +15,191 @@ class ReportsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final pets = context.watch<PetProvider>().pets;
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Health Reports')),
+      appBar: AppBar(
+        title: const Text('Health Reports', style: TextStyle(fontWeight: FontWeight.bold)),
+      ),
       body: pets.isEmpty
-          ? const Center(
+          ? Center(
               child: Column(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.bar_chart, size: 64, color: Colors.grey),
-                  SizedBox(height: 12),
-                  Text('No pets added yet', style: TextStyle(color: Colors.grey)),
+                  Icon(Icons.summarize_outlined, size: 72, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text('No pets added yet',
+                      style: theme.textTheme.titleMedium?.copyWith(color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  Text('Add a pet to generate health reports',
+                      style: TextStyle(color: Colors.grey.shade500)),
                 ],
               ),
             )
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: pets.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 12),
-              itemBuilder: (context, i) => _PetReportCard(pet: pets[i]),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+                  child: Text(
+                    'Select a pet to generate and download their full health report as a PDF.',
+                    style: TextStyle(fontSize: 13, color: Colors.grey.shade600),
+                  ),
+                ),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: pets.length,
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemBuilder: (context, i) => _PetReportCard(pet: pets[i]),
+                  ),
+                ),
+              ],
             ),
     );
   }
 }
 
-class _PetReportCard extends StatelessWidget {
+class _PetReportCard extends StatefulWidget {
   final PetModel pet;
   const _PetReportCard({required this.pet});
 
   @override
+  State<_PetReportCard> createState() => _PetReportCardState();
+}
+
+class _PetReportCardState extends State<_PetReportCard> {
+  bool _generating = false;
+
+  Future<void> _generatePdf(BuildContext context) async {
+    setState(() => _generating = true);
+
+    try {
+      final appointments = context.read<AppointmentProvider>().appointments
+          .where((a) => a.petId == widget.pet.id).toList()
+        ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
+      final records = context.read<MedicalProvider>().records
+          .where((r) => r.petId == widget.pet.id).toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+      final vaccinations = context.read<VaccinationProvider>().vaccinations
+          .where((v) => v.petId == widget.pet.id).toList()
+        ..sort((a, b) => b.dateGiven.compareTo(a.dateGiven));
+
+      final pdf = PdfService.generatePetReport(
+        pet: widget.pet,
+        appointments: appointments,
+        records: records,
+        vaccinations: vaccinations,
+      );
+
+      if (!context.mounted) return;
+
+      final bytes = await pdf.save();
+      await Printing.sharePdf(
+        bytes: bytes,
+        filename: '${widget.pet.name}_health_report.pdf',
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to generate PDF: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _generating = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final appointments = context.watch<AppointmentProvider>().appointments
-        .where((a) => a.petId == pet.id).toList();
+        .where((a) => a.petId == widget.pet.id).toList();
     final records = context.watch<MedicalProvider>().records
-        .where((r) => r.petId == pet.id).toList();
+        .where((r) => r.petId == widget.pet.id).toList();
     final vaccinations = context.watch<VaccinationProvider>().vaccinations
-        .where((v) => v.petId == pet.id).toList();
+        .where((v) => v.petId == widget.pet.id).toList();
+    final overdueCount = vaccinations.where((v) => v.isDue).length;
+    final theme = Theme.of(context);
 
-    final overdueVaccines = vaccinations.where((v) => v.isDue).length;
-    final upcomingAppts = appointments.where((a) => a.status.name == 'upcoming').length;
-
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => _PetReportDetailScreen(pet: pet)),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundImage: pet.photoUrl != null ? NetworkImage(pet.photoUrl!) : null,
-                    child: pet.photoUrl == null ? Text(pet.name[0].toUpperCase()) : null,
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Pet header
+            Row(
+              children: [
+                CircleAvatar(
+                  radius: 26,
+                  backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                  backgroundImage: widget.pet.photoUrl != null
+                      ? NetworkImage(widget.pet.photoUrl!)
+                      : null,
+                  child: widget.pet.photoUrl == null
+                      ? Icon(Icons.pets, color: theme.colorScheme.primary, size: 24)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.pet.name,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text(
+                        '${widget.pet.species}${widget.pet.breed != null ? ' • ${widget.pet.breed}' : ''} • ${widget.pet.age} yr${widget.pet.age != 1 ? 's' : ''}',
+                        style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(pet.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        Text('${pet.species} • ${pet.breed}', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                      ],
+                ),
+                if (overdueCount > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
                     ),
+                    child: Text('$overdueCount overdue',
+                        style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w600)),
                   ),
-                  if (overdueVaccines > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)),
-                      child: Text('$overdueVaccines overdue', style: const TextStyle(color: Colors.red, fontSize: 11, fontWeight: FontWeight.w600)),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  _StatChip(icon: Icons.event, label: 'Appointments', value: appointments.length, color: Colors.purple),
-                  const SizedBox(width: 8),
-                  _StatChip(icon: Icons.medical_services, label: 'Records', value: records.length, color: Colors.teal),
-                  const SizedBox(width: 8),
-                  _StatChip(icon: Icons.vaccines, label: 'Vaccines', value: vaccinations.length, color: Colors.blue),
-                ],
-              ),
-              if (upcomingAppts > 0) ...[
-                const SizedBox(height: 10),
-                Text('$upcomingAppts upcoming appointment${upcomingAppts > 1 ? 's' : ''}',
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600])),
               ],
-            ],
-          ),
+            ),
+            const SizedBox(height: 16),
+
+            // Stats row
+            Row(
+              children: [
+                _StatChip(icon: Icons.event_outlined, label: 'Appointments', value: appointments.length, color: Colors.purple),
+                const SizedBox(width: 8),
+                _StatChip(icon: Icons.medical_services_outlined, label: 'Records', value: records.length, color: Colors.teal),
+                const SizedBox(width: 8),
+                _StatChip(icon: Icons.vaccines, label: 'Vaccines', value: vaccinations.length, color: Colors.blue),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Download PDF button
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _generating ? null : () => _generatePdf(context),
+                icon: _generating
+                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.picture_as_pdf_outlined),
+                label: Text(_generating ? 'Generating...' : 'Download PDF Report'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -134,7 +227,7 @@ class _StatChip extends StatelessWidget {
             Icon(icon, color: color, size: 20),
             const SizedBox(height: 4),
             Text('$value', style: TextStyle(fontWeight: FontWeight.bold, color: color, fontSize: 16)),
-            Text(label, style: TextStyle(fontSize: 10, color: Colors.grey[600])),
+            Text(label, style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
           ],
         ),
       ),
@@ -142,136 +235,10 @@ class _StatChip extends StatelessWidget {
   }
 }
 
-// ─── Detail Screen ───────────────────────────────────────────────────────────
-
-class _PetReportDetailScreen extends StatelessWidget {
-  final PetModel pet;
-  const _PetReportDetailScreen({required this.pet});
-
-  @override
-  Widget build(BuildContext context) {
-    final appointments = context.watch<AppointmentProvider>().appointments
-        .where((a) => a.petId == pet.id).toList()
-      ..sort((a, b) => b.dateTime.compareTo(a.dateTime));
-    final records = context.watch<MedicalProvider>().records
-        .where((r) => r.petId == pet.id).toList()
-      ..sort((a, b) => b.date.compareTo(a.date));
-    final vaccinations = context.watch<VaccinationProvider>().vaccinations
-        .where((v) => v.petId == pet.id).toList()
-      ..sort((a, b) => b.dateGiven.compareTo(a.dateGiven));
-
-    return Scaffold(
-      appBar: AppBar(title: Text('${pet.name}\'s Report')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _SectionHeader(title: 'Appointments (${appointments.length})'),
-          if (appointments.isEmpty)
-            _EmptyRow(label: 'No appointments')
-          else
-            ...appointments.map((a) => _SimpleRow(
-              icon: Icons.event,
-              title: a.service,
-              subtitle: '${a.vetName} • ${_fmt(a.dateTime)}',
-              trailing: _statusBadge(a.status.name),
-            )),
-          const SizedBox(height: 16),
-          _SectionHeader(title: 'Medical Records (${records.length})'),
-          if (records.isEmpty)
-            _EmptyRow(label: 'No medical records')
-          else
-            ...records.map((r) => _SimpleRow(
-              icon: Icons.medical_services,
-              title: r.diagnosis,
-              subtitle: '${r.vetName} • ${_fmt(r.date)}',
-            )),
-          const SizedBox(height: 16),
-          _SectionHeader(title: 'Vaccinations (${vaccinations.length})'),
-          if (vaccinations.isEmpty)
-            _EmptyRow(label: 'No vaccinations')
-          else
-            ...vaccinations.map((v) => _SimpleRow(
-              icon: Icons.vaccines,
-              title: v.vaccineName,
-              subtitle: 'Given: ${_fmt(v.dateGiven)}${v.nextDueDate != null ? ' • Due: ${_fmt(v.nextDueDate!)}' : ''}',
-              trailing: v.isDue
-                  ? Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(6)),
-                      child: const Text('Overdue', style: TextStyle(color: Colors.red, fontSize: 11)),
-                    )
-                  : null,
-            )),
-        ],
-      ),
-    );
-  }
-
-  String _fmt(DateTime dt) => '${dt.day}/${dt.month}/${dt.year}';
-
-  Widget _statusBadge(String status) {
-    final colors = {
-      'upcoming': Colors.blue,
-      'completed': Colors.green,
-      'cancelled': Colors.grey,
-    };
-    final c = colors[status] ?? Colors.grey;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: c.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-      child: Text(status[0].toUpperCase() + status.substring(1), style: TextStyle(color: c, fontSize: 11)),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  const _SectionHeader({required this.title});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-      );
-}
-
-class _EmptyRow extends StatelessWidget {
-  final String label;
-  const _EmptyRow({required this.label});
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(label, style: TextStyle(color: Colors.grey[500], fontSize: 13)),
-      );
-}
-
-class _SimpleRow extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Widget? trailing;
-  const _SimpleRow({required this.icon, required this.title, required this.subtitle, this.trailing});
-
-  @override
-  Widget build(BuildContext context) => Card(
-        margin: const EdgeInsets.only(bottom: 6),
-        child: ListTile(
-          dense: true,
-          leading: Icon(icon, size: 20, color: Theme.of(context).colorScheme.primary),
-          title: Text(title, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-          subtitle: Text(subtitle, style: const TextStyle(fontSize: 11)),
-          trailing: trailing,
-        ),
-      );
-}
-
+// Keep this export so routes.dart still works
 class PdfPreviewScreen extends StatelessWidget {
   const PdfPreviewScreen({super.key});
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('PDF Preview')),
-        body: const Center(child: Text('PDF preview coming soon.')),
-      );
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

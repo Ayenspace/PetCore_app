@@ -10,6 +10,7 @@ class AppointmentProvider extends ChangeNotifier {
   bool _loading = false;
   String? _error;
   StreamSubscription? _subscription;
+  Timer? _overdueTimer;
 
   List<AppointmentModel> get appointments => _appointments;
   bool get loading => _loading;
@@ -21,19 +22,28 @@ class AppointmentProvider extends ChangeNotifier {
       _appointments = list;
       notifyListeners();
     });
+    _overdueTimer?.cancel();
+    _overdueTimer = Timer.periodic(const Duration(minutes: 1), (_) => _markOverdue(ownerId));
+    _markOverdue(ownerId);
   }
 
-  Future<bool> addAppointment(AppointmentModel appointment) async {
+  void _markOverdue(String ownerId) {
+    final now = DateTime.now();
+    for (final a in _appointments) {
+      if (a.status == AppointmentStatus.upcoming && a.dateTime.isBefore(now)) {
+        _service.updateStatus(ownerId, a.id, AppointmentStatus.overdue);
+      }
+    }
+  }
+
+  Future<void> addAppointment(AppointmentModel appointment) async {
     _setLoading(true);
     try {
-      final newAppt = await _service.addAppointment(appointment);
-      _appointments.add(newAppt);
-      _appointments.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+      await _service.addAppointment(appointment);
       _error = null;
-      return true;
     } catch (e) {
       _error = e.toString();
-      return false;
+      rethrow;
     } finally {
       _setLoading(false);
     }
@@ -86,6 +96,7 @@ class AppointmentProvider extends ChangeNotifier {
   @override
   void dispose() {
     _subscription?.cancel();
+    _overdueTimer?.cancel();
     super.dispose();
   }
 }

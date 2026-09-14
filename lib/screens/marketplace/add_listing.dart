@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/marketplace_model.dart';
@@ -20,11 +21,11 @@ class _AddListingScreenState extends State<AddListingScreen> {
   final _locationController = TextEditingController();
 
   static const List<String> _assetImageOptions = [
-    'assets/images/marketplace/cheetah cat.jfif',
-    'assets/images/marketplace/german shephard.jfif',
-    'assets/images/marketplace/maccoon cat.avif',
-    'assets/images/marketplace/pink collar.jfif',
-    'assets/images/marketplace/rabbit.jfif',
+    'assets/images/marketplace/cheetah_cat.jfif',
+    'assets/images/marketplace/german_shephard.jpg',
+    'assets/images/marketplace/maccoon_cat.jpg',
+    'assets/images/marketplace/pink_collar.jpg',
+    'assets/images/marketplace/rabbit.jpg',
   ];
 
   ListingCategory _category = ListingCategory.other;
@@ -119,6 +120,12 @@ class _AddListingScreenState extends State<AddListingScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: context.canPop()
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back),
+                onPressed: () => context.pop(),
+              )
+            : null,
         title: const Text(
           'Add Listing',
           style: TextStyle(fontWeight: FontWeight.bold),

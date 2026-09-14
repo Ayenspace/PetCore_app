@@ -6,6 +6,7 @@ import 'app/app.dart';
 import 'firebase_options.dart';
 import 'providers/appointment_provider.dart';
 import 'providers/auth_provider.dart';
+import 'providers/currency_provider.dart';
 import 'providers/medical_provider.dart';
 import 'providers/marketplace_provider.dart';
 import 'providers/reminder_provider.dart';
@@ -21,6 +22,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => AppAuthProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => CurrencyProvider()),
         ChangeNotifierProvider(create: (_) => PetProvider()),
         ChangeNotifierProvider(create: (_) => AppointmentProvider()),
         ChangeNotifierProvider(create: (_) => MedicalProvider()),

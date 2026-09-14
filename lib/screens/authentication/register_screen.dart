@@ -24,7 +24,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
   UserRole _selectedRole = UserRole.petOwner;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AppAuthProvider>().addListener(_onAuthChanged);
+    });
+  }
+
+  void _onAuthChanged() {
+    final auth = context.read<AppAuthProvider>();
+    if (auth.status == AuthStatus.authenticated && mounted) {
+      context.go('/home');
+    }
+  }
+
+  @override
   void dispose() {
+    context.read<AppAuthProvider>().removeListener(_onAuthChanged);
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -36,20 +52,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
-
     final auth = context.read<AppAuthProvider>();
-
     final success = await auth.register(
       name: _nameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
       role: _selectedRole,
-      clinicName: _selectedRole == UserRole.vet
-          ? _clinicController.text.trim()
-          : null,
-      specialization: _selectedRole == UserRole.vet
-          ? _specializationController.text.trim()
-          : null,
+      clinicName: _selectedRole == UserRole.vet ? _clinicController.text.trim() : null,
+      specialization: _selectedRole == UserRole.vet ? _specializationController.text.trim() : null,
     );
 
     if (success && mounted) {

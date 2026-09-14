@@ -112,12 +112,15 @@ class MarketplaceProvider extends ChangeNotifier {
   }
 
   Future<bool> deleteListing(String sellerId, String listingId) async {
-    _setLoading(true);
-    await _service.deleteListingImages(sellerId, listingId);
+    // Remove from DB immediately for instant UI response
     final success = await _service.deleteListing(listingId);
-    if (!success) _error = 'Failed to delete listing.';
-    _setLoading(false);
-    return success;
+    if (!success) {
+      _error = 'Failed to delete listing.';
+      return false;
+    }
+    // Delete images in background — don't await
+    _service.deleteListingImages(sellerId, listingId);
+    return true;
   }
 
   Future<void> deleteListingImages(String sellerId, String listingId) async {
