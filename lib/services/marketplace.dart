@@ -92,6 +92,23 @@ class MarketplaceService {
     }
   }
 
+  Future<bool> updateOrderStatus(
+    String orderId, {
+    required String status,
+    String? sellerReply,
+  }) async {
+    try {
+      final update = <String, dynamic>{'status': status};
+      if (sellerReply != null && sellerReply.trim().isNotEmpty) {
+        update['sellerReply'] = sellerReply.trim();
+      }
+      await _db.update('marketplace_orders/$orderId', update);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<String> uploadListingImage(
     String sellerId,
     String listingId,

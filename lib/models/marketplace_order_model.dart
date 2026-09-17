@@ -7,6 +7,7 @@ class MarketplaceOrderModel {
   final String buyerName;
   final String? buyerPhotoUrl;
   final String message;
+  final String? sellerReply;
   final int quantity;
   final String status;
   final DateTime createdAt;
@@ -20,10 +21,16 @@ class MarketplaceOrderModel {
     required this.buyerName,
     this.buyerPhotoUrl,
     this.message = '',
+    this.sellerReply,
     this.quantity = 1,
     this.status = 'pending',
     required this.createdAt,
   });
+
+  String get normalizedStatus => status.trim().toLowerCase();
+  bool get isPending => normalizedStatus == 'pending';
+  bool get isAccepted => normalizedStatus == 'accepted';
+  bool get isRejected => normalizedStatus == 'rejected';
 
   factory MarketplaceOrderModel.fromMap(Map<String, dynamic> map) =>
       MarketplaceOrderModel(
@@ -35,9 +42,12 @@ class MarketplaceOrderModel {
         buyerName: map['buyerName'] ?? '',
         buyerPhotoUrl: map['buyerPhotoUrl'],
         message: map['message'] ?? '',
+        sellerReply: map['sellerReply'],
         quantity: (map['quantity'] as num?)?.toInt() ?? 1,
-        status: map['status'] ?? 'pending',
-        createdAt: DateTime.parse(map['createdAt']),
+        status: (map['status'] ?? 'pending').toString(),
+        createdAt:
+            DateTime.tryParse(map['createdAt']?.toString() ?? '') ??
+            DateTime.now(),
       );
 
   Map<String, dynamic> toMap() => {
@@ -49,6 +59,7 @@ class MarketplaceOrderModel {
     'buyerName': buyerName,
     'buyerPhotoUrl': buyerPhotoUrl,
     'message': message,
+    'sellerReply': sellerReply,
     'quantity': quantity,
     'status': status,
     'createdAt': createdAt.toIso8601String(),
@@ -63,6 +74,7 @@ class MarketplaceOrderModel {
     String? buyerName,
     String? buyerPhotoUrl,
     String? message,
+    String? sellerReply,
     int? quantity,
     String? status,
     DateTime? createdAt,
@@ -75,6 +87,7 @@ class MarketplaceOrderModel {
     buyerName: buyerName ?? this.buyerName,
     buyerPhotoUrl: buyerPhotoUrl ?? this.buyerPhotoUrl,
     message: message ?? this.message,
+    sellerReply: sellerReply ?? this.sellerReply,
     quantity: quantity ?? this.quantity,
     status: status ?? this.status,
     createdAt: createdAt ?? this.createdAt,

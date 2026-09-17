@@ -63,28 +63,34 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
 
   void _loadPets() {
     final ownerId = context.read<AppAuthProvider>().user!.id;
-    _petSub = _petService.petsStream(ownerId).listen((pets) {
-      if (!mounted) return;
-      setState(() {
-        _pets = pets;
-        _loadingPets = false;
-      });
-    }, onError: (_) {
-      if (!mounted) return;
-      setState(() => _loadingPets = false);
-    });
+    _petSub = _petService
+        .petsStream(ownerId)
+        .listen(
+          (pets) {
+            if (!mounted) return;
+            setState(() {
+              _pets = pets;
+              _loadingPets = false;
+            });
+          },
+          onError: (_) {
+            if (!mounted) return;
+            setState(() => _loadingPets = false);
+          },
+        );
   }
 
   Future<void> _loadVets() async {
     try {
       final vets = await _vetService.loadVets();
       if (!mounted) return;
-      final locations = vets
-          .map((v) => v.clinicName ?? '')
-          .where((a) => a.isNotEmpty)
-          .toSet()
-          .toList()
-        ..sort();
+      final locations =
+          vets
+              .map((v) => v.clinicName ?? '')
+              .where((a) => a.isNotEmpty)
+              .toSet()
+              .toList()
+            ..sort();
       setState(() {
         _vets = vets;
         _locations = locations;
@@ -163,6 +169,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
       petName: _selectedPet!.name,
       service: _selectedService,
       vetName: _selectedVet!.name,
+      vetId: _selectedVet!.id,
       location: _selectedLocation,
       dateTime: appointmentDateTime,
       notes: _notesController.text.trim(),
@@ -173,15 +180,34 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
     try {
       await context.read<AppointmentProvider>().addAppointment(appointment);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Appointment added successfully.")),
+
+      await showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Appointment booked'),
+          content: Text(
+            '${_selectedPet!.name} is booked with ${_selectedVet!.name} on ${appointmentDateTime.day}/${appointmentDateTime.month}/${appointmentDateTime.year} at ${TimeOfDay.fromDateTime(appointmentDateTime).format(context)}.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
-      context.pop();
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Appointment added successfully.")),
+        );
+        context.pop();
+      }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to save appointment: $e")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to save appointment: $e")));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -211,12 +237,17 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                         prefixIcon: Icon(Icons.pets),
                       ),
                       hint: const Text('Select a pet'),
-                      items: _pets.map((pet) => DropdownMenuItem(
-                        value: pet,
-                        child: Text('${pet.name} (${pet.species})'),
-                      )).toList(),
+                      items: _pets
+                          .map(
+                            (pet) => DropdownMenuItem(
+                              value: pet,
+                              child: Text('${pet.name} (${pet.species})'),
+                            ),
+                          )
+                          .toList(),
                       onChanged: (pet) => setState(() => _selectedPet = pet),
-                      validator: (v) => v == null ? 'Please select a pet' : null,
+                      validator: (v) =>
+                          v == null ? 'Please select a pet' : null,
                     ),
 
               const SizedBox(height: 20),
@@ -236,13 +267,17 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                       ),
                       hint: const Text('Select a location'),
                       items: _locations
-                          .map((loc) => DropdownMenuItem(value: loc, child: Text(loc)))
+                          .map(
+                            (loc) =>
+                                DropdownMenuItem(value: loc, child: Text(loc)),
+                          )
                           .toList(),
                       onChanged: (loc) => setState(() {
                         _selectedLocation = loc;
                         _selectedVet = null;
                       }),
-                      validator: (v) => v == null ? 'Please select a location' : null,
+                      validator: (v) =>
+                          v == null ? 'Please select a location' : null,
                     ),
 
               const SizedBox(height: 20),
@@ -271,20 +306,25 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
                 ),
                 hint: const Text('Select a veterinarian'),
                 items: _vets
-                    .where((v) =>
-                        _selectedLocation == null ||
-                        v.clinicName == _selectedLocation)
-                    .map((vet) => DropdownMenuItem(
-                          value: vet,
-                          child: Text(
-                            vet.clinicName != null && vet.clinicName!.isNotEmpty
-                                ? '${vet.name} • ${vet.clinicName}'
-                                : vet.name,
-                          ),
-                        ))
+                    .where(
+                      (v) =>
+                          _selectedLocation == null ||
+                          v.clinicName == _selectedLocation,
+                    )
+                    .map(
+                      (vet) => DropdownMenuItem(
+                        value: vet,
+                        child: Text(
+                          vet.clinicName != null && vet.clinicName!.isNotEmpty
+                              ? '${vet.name} • ${vet.clinicName}'
+                              : vet.name,
+                        ),
+                      ),
+                    )
                     .toList(),
                 onChanged: (vet) => setState(() => _selectedVet = vet),
-                validator: (v) => v == null ? 'Please select a veterinarian' : null,
+                validator: (v) =>
+                    v == null ? 'Please select a veterinarian' : null,
               ),
 
               const SizedBox(height: 20),

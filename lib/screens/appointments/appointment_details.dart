@@ -4,15 +4,11 @@ import 'package:provider/provider.dart';
 
 import '../../models/appointment_model.dart';
 import '../../providers/appointment_provider.dart';
-import '../../providers/auth_provider.dart';
 
 class AppointmentDetailsScreen extends StatelessWidget {
   final String appointmentId;
 
-  const AppointmentDetailsScreen({
-    super.key,
-    required this.appointmentId,
-  });
+  const AppointmentDetailsScreen({super.key, required this.appointmentId});
 
   @override
   Widget build(BuildContext context) {
@@ -23,20 +19,16 @@ class AppointmentDetailsScreen extends StatelessWidget {
     if (appointment == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(
-          child: Text("Appointment not found."),
-        ),
+        body: const Center(child: Text("Appointment not found.")),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Appointment Details"),
-      ),
+      appBar: AppBar(title: const Text("Appointment Details")),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-                    Icon(
+          Icon(
             Icons.calendar_month,
             size: 70,
             color: Theme.of(context).colorScheme.primary,
@@ -61,7 +53,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 30),
-                    Card(
+          Card(
             child: ListTile(
               leading: const Icon(Icons.calendar_today),
               title: const Text("Date"),
@@ -76,9 +68,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
               leading: const Icon(Icons.access_time),
               title: const Text("Time"),
               subtitle: Text(
-                TimeOfDay.fromDateTime(
-                  appointment.dateTime,
-                ).format(context),
+                TimeOfDay.fromDateTime(appointment.dateTime).format(context),
               ),
             ),
           ),
@@ -95,9 +85,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
             child: ListTile(
               leading: const Icon(Icons.location_on),
               title: const Text("Clinic"),
-              subtitle: Text(
-                appointment.location ?? "Not provided",
-              ),
+              subtitle: Text(appointment.location ?? "Not provided"),
             ),
           ),
 
@@ -114,61 +102,76 @@ class AppointmentDetailsScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: 20),
-                    Center(
+          Center(
             child: Chip(
-              label: Text(
-                appointment.status.name.toUpperCase(),
-              ),
+              label: Text(appointment.status.name.toUpperCase()),
               backgroundColor: appointment.status == AppointmentStatus.upcoming
                   ? Colors.blue.shade50
                   : appointment.status == AppointmentStatus.completed
-                      ? Colors.green.shade50
-                      : appointment.status == AppointmentStatus.overdue
-                          ? Colors.orange.shade50
-                          : Colors.red.shade50,
+                  ? Colors.green.shade50
+                  : appointment.status == AppointmentStatus.overdue
+                  ? Colors.orange.shade50
+                  : Colors.red.shade50,
               avatar: Icon(
                 appointment.status == AppointmentStatus.upcoming
                     ? Icons.schedule
                     : appointment.status == AppointmentStatus.completed
-                        ? Icons.check_circle
-                        : appointment.status == AppointmentStatus.overdue
-                            ? Icons.warning_amber_rounded
-                            : Icons.cancel,
+                    ? Icons.check_circle
+                    : appointment.status == AppointmentStatus.overdue
+                    ? Icons.warning_amber_rounded
+                    : Icons.cancel,
                 color: appointment.status == AppointmentStatus.upcoming
                     ? Colors.blue
                     : appointment.status == AppointmentStatus.completed
-                        ? Colors.green
-                        : appointment.status == AppointmentStatus.overdue
-                            ? Colors.orange
-                            : Colors.red,
+                    ? Colors.green
+                    : appointment.status == AppointmentStatus.overdue
+                    ? Colors.orange
+                    : Colors.red,
               ),
             ),
           ),
 
           if (appointment.status == AppointmentStatus.upcoming ||
-              appointment.status == AppointmentStatus.overdue) ...[  
+              appointment.status == AppointmentStatus.overdue) ...[
             const SizedBox(height: 16),
             Row(
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                    ),
                     onPressed: () async {
-                      await context.read<AppointmentProvider>().updateAppointment(
-                            appointment.copyWith(status: AppointmentStatus.completed));
+                      await context
+                          .read<AppointmentProvider>()
+                          .updateAppointment(
+                            appointment.copyWith(
+                              status: AppointmentStatus.completed,
+                            ),
+                          );
                       if (context.mounted) context.pop();
                     },
                     icon: const Icon(Icons.check, color: Colors.white),
-                    label: const Text('Mark Complete', style: TextStyle(color: Colors.white)),
+                    label: const Text(
+                      'Mark Complete',
+                      style: TextStyle(color: Colors.white),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.red,
+                    ),
                     onPressed: () async {
-                      await context.read<AppointmentProvider>().updateAppointment(
-                            appointment.copyWith(status: AppointmentStatus.cancelled));
+                      await context
+                          .read<AppointmentProvider>()
+                          .updateAppointment(
+                            appointment.copyWith(
+                              status: AppointmentStatus.cancelled,
+                            ),
+                          );
                       if (context.mounted) context.pop();
                     },
                     icon: const Icon(Icons.close),
@@ -180,11 +183,9 @@ class AppointmentDetailsScreen extends StatelessWidget {
           ],
 
           const SizedBox(height: 30),
-                    ElevatedButton.icon(
+          ElevatedButton.icon(
             onPressed: () {
-              context.push(
-                "/appointments/${appointment.id}/edit",
-              );
+              context.push("/appointments/${appointment.id}/edit");
             },
             icon: const Icon(Icons.edit),
             label: const Text("Edit Appointment"),
@@ -192,9 +193,71 @@ class AppointmentDetailsScreen extends StatelessWidget {
 
           const SizedBox(height: 15),
 
+          OutlinedButton.icon(
+            onPressed: () async {
+              final controller = TextEditingController();
+              final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Send note'),
+                  content: SizedBox(
+                    width: 360,
+                    child: TextField(
+                      controller: controller,
+                      minLines: 2,
+                      maxLines: 5,
+                      decoration: InputDecoration(
+                        hintText:
+                            'Write a quick message for ${appointment.vetName}',
+                        border: const OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('Cancel'),
+                    ),
+                    FilledButton(
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('Send'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed != true || controller.text.trim().isEmpty) return;
+
+              final nextNotes = (appointment.notes ?? '').trim();
+              final message = controller.text.trim();
+              final combined = nextNotes.isEmpty
+                  ? message
+                  : '$nextNotes\n\n$message';
+
+              final provider = context.read<AppointmentProvider>();
+              final success = await provider.updateAppointment(
+                appointment.copyWith(notes: combined),
+              );
+
+              if (context.mounted && scaffoldMessenger != null) {
+                scaffoldMessenger.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      success ? 'Message saved.' : 'Failed to save message.',
+                    ),
+                  ),
+                );
+              }
+            },
+            icon: const Icon(Icons.message_outlined),
+            label: const Text('Send message'),
+          ),
+
+          const SizedBox(height: 15),
+
           FilledButton.tonalIcon(
             onPressed: () async {
-              final ownerId = context.read<AppAuthProvider>().user!.id;
               final apptProvider = context.read<AppointmentProvider>();
               final router = GoRouter.of(context);
 
@@ -224,7 +287,11 @@ class AppointmentDetailsScreen extends StatelessWidget {
 
               if (confirm != true) return;
 
-              await apptProvider.deleteAppointment(ownerId, appointment.id);
+              await apptProvider.deleteAppointment(
+                appointment.ownerId,
+                appointment.id,
+                vetId: appointment.vetId,
+              );
 
               if (context.mounted) {
                 router.pop();
@@ -233,7 +300,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
             icon: const Icon(Icons.delete),
             label: const Text("Delete Appointment"),
           ),
-                  ],
+        ],
       ),
     );
   }

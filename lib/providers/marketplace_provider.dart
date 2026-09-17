@@ -139,10 +139,56 @@ class MarketplaceProvider extends ChangeNotifier {
     _setLoading(true);
     try {
       final success = await _service.addOrder(order);
+      if (success) {
+        final saved = _orders.contains(order)
+            ? _orders.firstWhere(
+                (item) => item.id == order.id,
+                orElse: () => order,
+              )
+            : order;
+        if (!_orders.any(
+          (item) => item.id == saved.id && item.listingId == saved.listingId,
+        )) {
+          _orders.insert(0, saved);
+        }
+        notifyListeners();
+      }
       _setLoading(false);
       return success;
     } catch (e) {
       _error = 'Failed to place order: $e';
+      _setLoading(false);
+      return false;
+    }
+  }
+
+  Future<bool> updateOrderStatus(
+    String orderId, {
+    required String status,
+    String? sellerReply,
+  }) async {
+    _error = null;
+    _setLoading(true);
+    try {
+      final success = await _service.updateOrderStatus(
+        orderId,
+        status: status,
+        sellerReply: sellerReply,
+      );
+      if (success) {
+        final index = _orders.indexWhere((o) => o.id == orderId);
+        if (index != -1) {
+          final updated = _orders[index].copyWith(
+            status: status,
+            sellerReply: sellerReply ?? _orders[index].sellerReply,
+          );
+          _orders[index] = updated;
+        }
+      }
+      _setLoading(false);
+      return success;
+    } catch (e) {
+      _error = 'Failed to update order: $e';
       _setLoading(false);
       return false;
     }

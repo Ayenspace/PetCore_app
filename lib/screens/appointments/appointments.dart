@@ -15,18 +15,30 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
   @override
   void initState() {
     super.initState();
-    final uid = context.read<AppAuthProvider>().user?.id;
-    if (uid != null) context.read<AppointmentProvider>().listenToAppointments(uid);
+    final user = context.read<AppAuthProvider>().user;
+    if (user == null) return;
+
+    context.read<AppointmentProvider>().listenToAppointments(user.id);
+    if (user.isVet) {
+      context.read<AppointmentProvider>().listenToVetAppointments(user.id);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final appointments = context.watch<AppointmentProvider>().appointments;
+    final user = context.watch<AppAuthProvider>().user;
+    final provider = context.watch<AppointmentProvider>();
+    final appointments = user != null && user.isVet
+        ? provider.vetAppointments
+        : provider.appointments;
     final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Appointments', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Appointments',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
@@ -46,9 +58,18 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.calendar_today, size: 80, color: Colors.grey.shade300),
+                  Icon(
+                    Icons.calendar_today,
+                    size: 80,
+                    color: Colors.grey.shade300,
+                  ),
                   const SizedBox(height: 16),
-                  Text('No appointments yet', style: theme.textTheme.titleLarge?.copyWith(color: Colors.grey)),
+                  Text(
+                    'No appointments yet',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: Colors.grey,
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
                     onPressed: () => context.push('/appointments/add'),
@@ -61,7 +82,8 @@ class _AppointmentsScreenState extends State<AppointmentsScreen> {
           : ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: appointments.length,
-              itemBuilder: (context, index) => _AppointmentCard(appointment: appointments[index]),
+              itemBuilder: (context, index) =>
+                  _AppointmentCard(appointment: appointments[index]),
             ),
     );
   }
@@ -77,10 +99,10 @@ class _AppointmentCard extends StatelessWidget {
     final statusColor = appointment.status == AppointmentStatus.upcoming
         ? Colors.blue
         : appointment.status == AppointmentStatus.completed
-            ? Colors.green
-            : appointment.status == AppointmentStatus.overdue
-                ? Colors.orange
-                : Colors.red;
+        ? Colors.green
+        : appointment.status == AppointmentStatus.overdue
+        ? Colors.orange
+        : Colors.red;
 
     return GestureDetector(
       onTap: () => context.push('/appointments/${appointment.id}'),
@@ -89,16 +111,30 @@ class _AppointmentCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
           leading: CircleAvatar(
             backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
             child: Icon(Icons.calendar_today, color: theme.colorScheme.primary),
           ),
-          title: Text(appointment.petName, style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text('${appointment.service} • ${appointment.dateTime.day}/${appointment.dateTime.month}/${appointment.dateTime.year}'),
+          title: Text(
+            appointment.petName,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(
+            '${appointment.service} • ${appointment.dateTime.day}/${appointment.dateTime.month}/${appointment.dateTime.year}',
+          ),
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
@@ -107,7 +143,11 @@ class _AppointmentCard extends StatelessWidget {
             ),
             child: Text(
               appointment.status.name,
-              style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                color: statusColor,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ),
@@ -125,20 +165,52 @@ class _BottomNav extends StatelessWidget {
       selectedIndex: currentIndex,
       onDestinationSelected: (index) {
         switch (index) {
-          case 0: context.go('/home'); break;
-          case 1: context.go('/pets'); break;
-          case 2: context.go('/appointments'); break;
-          case 3: context.go('/marketplace'); break;
-          case 4: context.go('/profile'); break;
+          case 0:
+            context.go('/home');
+            break;
+          case 1:
+            context.go('/pets');
+            break;
+          case 2:
+            context.go('/appointments');
+            break;
+          case 3:
+            context.go('/marketplace');
+            break;
+          case 4:
+            context.go('/profile');
+            break;
         }
       },
-      indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+      indicatorColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.15),
       destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.pets_outlined), selectedIcon: Icon(Icons.pets), label: 'Pets'),
-        NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Appointments'),
-        NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Market'),
-        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.pets_outlined),
+          selectedIcon: Icon(Icons.pets),
+          label: 'Pets',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.calendar_today_outlined),
+          selectedIcon: Icon(Icons.calendar_today),
+          label: 'Appointments',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.storefront_outlined),
+          selectedIcon: Icon(Icons.storefront),
+          label: 'Market',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
       ],
     );
   }
