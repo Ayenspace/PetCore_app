@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/pet_model.dart';
 import '../services/pet_service.dart';
+import '../services/weight_service.dart';
 
 class PetProvider extends ChangeNotifier {
   final _service = PetService();
+  final _weightService = WeightService();
 
   List<PetModel> _pets = [];
   bool _loading = false;
@@ -35,6 +37,11 @@ class PetProvider extends ChangeNotifier {
         _pets.add(newPet);
         _pets.sort((a, b) => a.name.compareTo(b.name));
       }
+      await _weightService.recordIfChanged(
+        newPet.ownerId,
+        newPet.id,
+        newPet.weight,
+      );
       _error = null;
       return true;
     } catch (e) {
@@ -51,6 +58,7 @@ class PetProvider extends ChangeNotifier {
       await _service.updatePet(pet);
       final index = _pets.indexWhere((p) => p.id == pet.id);
       if (index != -1) _pets[index] = pet;
+      await _weightService.recordIfChanged(pet.ownerId, pet.id, pet.weight);
       _error = null;
       return true;
     } catch (e) {

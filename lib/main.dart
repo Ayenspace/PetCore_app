@@ -13,6 +13,7 @@ import 'providers/reminder_provider.dart';
 import 'providers/vaccination_provider.dart';
 import 'providers/pet_providers.dart';
 import 'providers/theme_provider.dart';
+import 'providers/weight_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,6 +30,7 @@ void main() async {
         ChangeNotifierProvider(create: (_) => VaccinationProvider()),
         ChangeNotifierProvider(create: (_) => ReminderProvider()),
         ChangeNotifierProvider(create: (_) => MarketplaceProvider()),
+        ChangeNotifierProvider(create: (_) => WeightProvider()),
       ],
       child: const PetCoreApp(),
     ),

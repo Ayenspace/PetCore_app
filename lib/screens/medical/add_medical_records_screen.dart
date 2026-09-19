@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../../models/medical_record.dart';
+import '../../models/appointment_model.dart';
 import '../../models/pet_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/medical_provider.dart';
 import '../../providers/pet_providers.dart';
 
 class AddMedicalRecordScreen extends StatefulWidget {
-  const AddMedicalRecordScreen({super.key});
+  final AppointmentModel? appointment;
+
+  const AddMedicalRecordScreen({super.key, this.appointment});
   @override
   State<AddMedicalRecordScreen> createState() => _AddMedicalRecordScreenState();
 }
@@ -22,6 +25,8 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
 
   PetModel? _selectedPet;
   DateTime _date = DateTime.now();
+
+  bool get _isVetEntry => widget.appointment != null;
 
   @override
   void dispose() {
@@ -44,24 +49,27 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_selectedPet == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select a pet')),
-      );
+    if (_selectedPet == null && !_isVetEntry) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Please select a pet')));
       return;
     }
 
-    final uid = context.read<AppAuthProvider>().user!.id;
+    final user = context.read<AppAuthProvider>().user!;
+    final appointment = widget.appointment;
     final record = MedicalRecord(
       id: '',
-      ownerId: uid,
-      petId: _selectedPet!.id,
-      petName: _selectedPet!.name,
+      ownerId: appointment?.ownerId ?? user.id,
+      petId: appointment?.petId ?? _selectedPet!.id,
+      petName: appointment?.petName ?? _selectedPet!.name,
       diagnosis: _diagnosisController.text.trim(),
       treatment: _treatmentController.text.trim(),
-      vetName: _vetController.text.trim(),
+      vetName: _isVetEntry ? user.name : _vetController.text.trim(),
       date: _date,
-      notes: _notesController.text.trim().isEmpty ? null : _notesController.text.trim(),
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
       createdAt: DateTime.now(),
     );
 
@@ -76,7 +84,10 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Add Medical Record', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Add Medical Record',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -85,16 +96,28 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pet selector
-              DropdownButtonFormField<PetModel>(
-                decoration: const InputDecoration(
-                  labelText: 'Select Pet',
-                  prefixIcon: Icon(Icons.pets),
+              if (_isVetEntry)
+                InputDecorator(
+                  decoration: const InputDecoration(
+                    labelText: 'Patient',
+                    prefixIcon: Icon(Icons.pets),
+                  ),
+                  child: Text(widget.appointment!.petName),
+                )
+              else
+                DropdownButtonFormField<PetModel>(
+                  decoration: const InputDecoration(
+                    labelText: 'Select Pet',
+                    prefixIcon: Icon(Icons.pets),
+                  ),
+                  items: pets
+                      .map(
+                        (p) => DropdownMenuItem(value: p, child: Text(p.name)),
+                      )
+                      .toList(),
+                  onChanged: (p) => setState(() => _selectedPet = p),
+                  validator: (v) => v == null ? 'Please select a pet' : null,
                 ),
-                items: pets.map((p) => DropdownMenuItem(value: p, child: Text(p.name))).toList(),
-                onChanged: (p) => setState(() => _selectedPet = p),
-                validator: (v) => v == null ? 'Please select a pet' : null,
-              ),
               const SizedBox(height: 16),
 
               // Date picker
@@ -121,7 +144,9 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
                   labelText: 'Diagnosis',
                   prefixIcon: Icon(Icons.search_outlined),
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Please enter a diagnosis' : null,
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Please enter a diagnosis'
+                    : null,
               ),
               const SizedBox(height: 16),
 
@@ -132,19 +157,24 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
                   labelText: 'Treatment',
                   prefixIcon: Icon(Icons.healing_outlined),
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Please enter the treatment' : null,
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Please enter the treatment'
+                    : null,
               ),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _vetController,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Veterinarian',
-                  prefixIcon: Icon(Icons.person_outline),
+              if (!_isVetEntry)
+                TextFormField(
+                  controller: _vetController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Veterinarian',
+                    prefixIcon: Icon(Icons.person_outline),
+                  ),
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'Please enter the vet\'s name'
+                      : null,
                 ),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Please enter the vet\'s name' : null,
-              ),
               const SizedBox(height: 16),
 
               TextFormField(
@@ -164,8 +194,21 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
                 child: ElevatedButton(
                   onPressed: medical.loading ? null : _save,
                   child: medical.loading
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Save Record', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Save Record',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
 
@@ -180,9 +223,21 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 18,
+                      ),
                       const SizedBox(width: 8),
-                      Expanded(child: Text(medical.error!, style: const TextStyle(color: Colors.red, fontSize: 13))),
+                      Expanded(
+                        child: Text(
+                          medical.error!,
+                          style: const TextStyle(
+                            color: Colors.red,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),

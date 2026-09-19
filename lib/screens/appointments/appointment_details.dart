@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/appointment_model.dart';
 import '../../providers/appointment_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class AppointmentDetailsScreen extends StatelessWidget {
   final String appointmentId;
@@ -15,6 +16,8 @@ class AppointmentDetailsScreen extends StatelessWidget {
     final provider = context.watch<AppointmentProvider>();
 
     final appointment = provider.getAppointmentById(appointmentId);
+    final user = context.watch<AppAuthProvider>().user;
+    final isVet = user?.isVet == true;
 
     if (appointment == null) {
       return Scaffold(
@@ -131,6 +134,17 @@ class AppointmentDetailsScreen extends StatelessWidget {
             ),
           ),
 
+          if (isVet &&
+              (appointment.status == AppointmentStatus.upcoming ||
+                  appointment.status == AppointmentStatus.overdue)) ...[
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => context.push('/medical/add', extra: appointment),
+              icon: const Icon(Icons.note_add_outlined),
+              label: const Text('Add clinical record'),
+            ),
+          ],
+
           if (appointment.status == AppointmentStatus.upcoming ||
               appointment.status == AppointmentStatus.overdue) ...[
             const SizedBox(height: 16),
@@ -183,13 +197,14 @@ class AppointmentDetailsScreen extends StatelessWidget {
           ],
 
           const SizedBox(height: 30),
-          ElevatedButton.icon(
-            onPressed: () {
-              context.push("/appointments/${appointment.id}/edit");
-            },
-            icon: const Icon(Icons.edit),
-            label: const Text("Edit Appointment"),
-          ),
+          if (!isVet)
+            ElevatedButton.icon(
+              onPressed: () {
+                context.push("/appointments/${appointment.id}/edit");
+              },
+              icon: const Icon(Icons.edit),
+              label: const Text("Edit Appointment"),
+            ),
 
           const SizedBox(height: 15),
 
@@ -197,6 +212,7 @@ class AppointmentDetailsScreen extends StatelessWidget {
             onPressed: () async {
               final controller = TextEditingController();
               final scaffoldMessenger = ScaffoldMessenger.maybeOf(context);
+              final provider = context.read<AppointmentProvider>();
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (ctx) => AlertDialog(
@@ -208,8 +224,9 @@ class AppointmentDetailsScreen extends StatelessWidget {
                       minLines: 2,
                       maxLines: 5,
                       decoration: InputDecoration(
-                        hintText:
-                            'Write a quick message for ${appointment.vetName}',
+                        hintText: isVet
+                            ? 'Write a message for the pet owner'
+                            : 'Write a quick message for ${appointment.vetName}',
                         border: const OutlineInputBorder(),
                       ),
                     ),
@@ -235,7 +252,6 @@ class AppointmentDetailsScreen extends StatelessWidget {
                   ? message
                   : '$nextNotes\n\n$message';
 
-              final provider = context.read<AppointmentProvider>();
               final success = await provider.updateAppointment(
                 appointment.copyWith(notes: combined),
               );
@@ -256,50 +272,51 @@ class AppointmentDetailsScreen extends StatelessWidget {
 
           const SizedBox(height: 15),
 
-          FilledButton.tonalIcon(
-            onPressed: () async {
-              final apptProvider = context.read<AppointmentProvider>();
-              final router = GoRouter.of(context);
+          if (!isVet)
+            FilledButton.tonalIcon(
+              onPressed: () async {
+                final apptProvider = context.read<AppointmentProvider>();
+                final router = GoRouter.of(context);
 
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text("Delete Appointment"),
-                  content: const Text(
-                    "Are you sure you want to delete this appointment?",
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text("Delete Appointment"),
+                    content: const Text(
+                      "Are you sure you want to delete this appointment?",
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context, false);
+                        },
+                        child: const Text("Cancel"),
+                      ),
+                      FilledButton(
+                        onPressed: () {
+                          Navigator.pop(context, true);
+                        },
+                        child: const Text("Delete"),
+                      ),
+                    ],
                   ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context, false);
-                      },
-                      child: const Text("Cancel"),
-                    ),
-                    FilledButton(
-                      onPressed: () {
-                        Navigator.pop(context, true);
-                      },
-                      child: const Text("Delete"),
-                    ),
-                  ],
-                ),
-              );
+                );
 
-              if (confirm != true) return;
+                if (confirm != true) return;
 
-              await apptProvider.deleteAppointment(
-                appointment.ownerId,
-                appointment.id,
-                vetId: appointment.vetId,
-              );
+                await apptProvider.deleteAppointment(
+                  appointment.ownerId,
+                  appointment.id,
+                  vetId: appointment.vetId,
+                );
 
-              if (context.mounted) {
-                router.pop();
-              }
-            },
-            icon: const Icon(Icons.delete),
-            label: const Text("Delete Appointment"),
-          ),
+                if (context.mounted) {
+                  router.pop();
+                }
+              },
+              icon: const Icon(Icons.delete),
+              label: const Text("Delete Appointment"),
+            ),
         ],
       ),
     );

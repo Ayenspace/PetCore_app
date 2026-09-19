@@ -10,6 +10,7 @@ import '../../providers/vaccination_provider.dart';
 import '../../providers/reminder_provider.dart';
 import '../../providers/medical_provider.dart';
 import '../../models/user_model.dart';
+import '../../providers/weight_provider.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -34,6 +35,7 @@ class _HomeScreenState extends State<HomeScreen> {
       context.read<VaccinationProvider>().listenToVaccinations(uid);
       context.read<MedicalProvider>().listenToRecords(uid);
       context.read<ReminderProvider>().listenToReminders(uid);
+      context.read<WeightProvider>().listenToWeights(uid);
     }
   }
 
