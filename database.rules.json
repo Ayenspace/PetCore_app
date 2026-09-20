@@ -1,17 +1,16 @@
 {
   "rules": {
     ".read": "auth != null",
-    ".write": "auth != null",
     "users": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "$uid === auth.uid"
+        ".write": "($uid == auth.uid && (!data.exists() || data.child('role').val() == newData.child('role').val())) || (auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin')"
       }
     },
     "pets": {
       "$ownerId": {
         ".read": "auth != null",
-        ".write": "$ownerId === auth.uid"
+        ".write": "$ownerId == auth.uid"
       }
     },
     "marketplace": {
@@ -20,26 +19,26 @@
     },
     "appointments": {
       "$ownerId": {
-        ".read": "$ownerId === auth.uid",
-        ".write": "$ownerId === auth.uid"
+        ".read": "$ownerId == auth.uid",
+          ".write": "$ownerId == auth.uid"
       }
     },
     "reminders": {
       "$ownerId": {
-        ".read": "$ownerId === auth.uid",
-        ".write": "$ownerId === auth.uid"
+        ".read": "$ownerId == auth.uid",
+          ".write": "$ownerId == auth.uid"
       }
     },
     "medical_records": {
       "$ownerId": {
-        ".read": "$ownerId === auth.uid",
-        ".write": "$ownerId === auth.uid"
+        ".read": "$ownerId == auth.uid",
+          ".write": "$ownerId == auth.uid"
       }
     },
     "vaccinations": {
       "$ownerId": {
-        ".read": "$ownerId === auth.uid",
-        ".write": "$ownerId === auth.uid"
+        ".read": "$ownerId == auth.uid",
+          ".write": "$ownerId == auth.uid"
       }
     }
   }

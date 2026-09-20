@@ -40,7 +40,10 @@ class ProfileScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [theme.colorScheme.primary, theme.colorScheme.primary.withValues(alpha: 0.8)],
+                    colors: [
+                      theme.colorScheme.primary,
+                      theme.colorScheme.primary.withValues(alpha: 0.8),
+                    ],
                   ),
                 ),
                 child: Column(
@@ -50,23 +53,42 @@ class ProfileScreen extends StatelessWidget {
                     CircleAvatar(
                       radius: 44,
                       backgroundColor: Colors.white,
-                      backgroundImage: user.photoUrl != null ? NetworkImage(user.photoUrl!) : null,
+                      backgroundImage: user.photoUrl != null
+                          ? NetworkImage(user.photoUrl!)
+                          : null,
                       child: user.photoUrl == null
-                          ? Icon(Icons.person, size: 44, color: theme.colorScheme.primary)
+                          ? Icon(
+                              Icons.person,
+                              size: 44,
+                              color: theme.colorScheme.primary,
+                            )
                           : null,
                     ),
                     const SizedBox(height: 10),
-                    Text(user.name, style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text(
+                      user.name,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     const SizedBox(height: 4),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         user.isVet ? '🩺 Veterinarian' : '🐾 Pet Owner',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ],
@@ -112,13 +134,17 @@ class _VetProfileBody extends StatelessWidget {
             _StatTile(
               icon: Icons.workspace_premium_outlined,
               label: 'Specialization',
-              value: user.specialization?.isNotEmpty == true ? user.specialization! : 'General',
+              value: user.specialization?.isNotEmpty == true
+                  ? user.specialization!
+                  : 'General',
             ),
             const SizedBox(width: 12),
             _StatTile(
               icon: Icons.local_hospital_outlined,
               label: 'Clinic',
-              value: user.clinicName?.isNotEmpty == true ? user.clinicName! : 'Not set',
+              value: user.clinicName?.isNotEmpty == true
+                  ? user.clinicName!
+                  : 'Not set',
             ),
           ],
         ),
@@ -127,44 +153,96 @@ class _VetProfileBody extends StatelessWidget {
         // Contact info
         _SectionLabel('Contact Information'),
         const SizedBox(height: 8),
-        _SectionCard(children: [
-          _InfoTile(icon: Icons.email_outlined, label: 'Email', value: user.email),
-          if (user.phone != null && user.phone!.isNotEmpty)
-            _InfoTile(icon: Icons.phone_outlined, label: 'Phone', value: user.phone!),
-          if (user.address != null && user.address!.isNotEmpty)
-            _InfoTile(icon: Icons.location_on_outlined, label: 'Address', value: user.address!),
-        ]),
+        _SectionCard(
+          children: [
+            _InfoTile(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: user.email,
+            ),
+            if (user.phone != null && user.phone!.isNotEmpty)
+              _InfoTile(
+                icon: Icons.phone_outlined,
+                label: 'Phone',
+                value: user.phone!,
+              ),
+            if (user.address != null && user.address!.isNotEmpty)
+              _InfoTile(
+                icon: Icons.location_on_outlined,
+                label: 'Address',
+                value: user.address!,
+              ),
+          ],
+        ),
         const SizedBox(height: 20),
 
         // Clinic info
         _SectionLabel('Clinic Information'),
         const SizedBox(height: 8),
-        _SectionCard(children: [
-          _InfoTile(
-            icon: Icons.local_hospital_outlined,
-            label: 'Clinic Name',
-            value: user.clinicName?.isNotEmpty == true ? user.clinicName! : 'Not provided',
-          ),
-          _InfoTile(
-            icon: Icons.workspace_premium_outlined,
-            label: 'Specialization',
-            value: user.specialization?.isNotEmpty == true ? user.specialization! : 'Not provided',
-          ),
-          if (user.bio != null && user.bio!.isNotEmpty)
-            _InfoTile(icon: Icons.info_outline, label: 'Bio', value: user.bio!),
-        ]),
+        _SectionCard(
+          children: [
+            _InfoTile(
+              icon: Icons.local_hospital_outlined,
+              label: 'Clinic Name',
+              value: user.clinicName?.isNotEmpty == true
+                  ? user.clinicName!
+                  : 'Not provided',
+            ),
+            _InfoTile(
+              icon: Icons.workspace_premium_outlined,
+              label: 'Specialization',
+              value: user.specialization?.isNotEmpty == true
+                  ? user.specialization!
+                  : 'Not provided',
+            ),
+            if (user.bio != null && user.bio!.isNotEmpty)
+              _InfoTile(
+                icon: Icons.info_outline,
+                label: 'Bio',
+                value: user.bio!,
+              ),
+          ],
+        ),
         const SizedBox(height: 20),
 
         // Quick links — vet relevant
         _SectionLabel('Quick Access'),
         const SizedBox(height: 8),
-        _SectionCard(children: [
-          _LinkTile(icon: Icons.calendar_today_outlined, label: 'Appointments', onTap: () => GoRouter.of(context).go('/appointments')),
-          _LinkTile(icon: Icons.medical_services_outlined, label: 'Medical Records', onTap: () => GoRouter.of(context).go('/medical')),
-          _LinkTile(icon: Icons.vaccines, label: 'Vaccinations', onTap: () => GoRouter.of(context).go('/vaccinations')),
-          _LinkTile(icon: Icons.bar_chart_outlined, label: 'Reports', onTap: () => GoRouter.of(context).push('/reports')),
-          _LinkTile(icon: Icons.settings_outlined, label: 'Settings', onTap: () => GoRouter.of(context).go('/settings')),
-        ]),
+        _SectionCard(
+          children: [
+            _LinkTile(
+              icon: Icons.calendar_today_outlined,
+              label: 'Appointments',
+              onTap: () => GoRouter.of(context).go('/appointments'),
+            ),
+            _LinkTile(
+              icon: Icons.medical_services_outlined,
+              label: 'Medical Records',
+              onTap: () => GoRouter.of(context).go('/medical'),
+            ),
+            _LinkTile(
+              icon: Icons.vaccines,
+              label: 'Vaccinations',
+              onTap: () => GoRouter.of(context).go('/vaccinations'),
+            ),
+            _LinkTile(
+              icon: Icons.bar_chart_outlined,
+              label: 'Reports',
+              onTap: () => GoRouter.of(context).push('/reports'),
+            ),
+            _LinkTile(
+              icon: Icons.settings_outlined,
+              label: 'Settings',
+              onTap: () => GoRouter.of(context).go('/settings'),
+            ),
+            if (user.isAdmin)
+              _LinkTile(
+                icon: Icons.admin_panel_settings_outlined,
+                label: 'Admin Dashboard',
+                onTap: () => GoRouter.of(context).go('/admin'),
+              ),
+          ],
+        ),
         const SizedBox(height: 20),
 
         _LogoutButton(),
@@ -190,29 +268,79 @@ class _OwnerProfileBody extends StatelessWidget {
           children: [
             _StatTile(icon: Icons.pets, label: 'My Pets', value: '$petCount'),
             const SizedBox(width: 12),
-            _StatTile(icon: Icons.alternate_email, label: 'Username', value: user.email.split('@').first),
+            _StatTile(
+              icon: Icons.alternate_email,
+              label: 'Username',
+              value: user.email.split('@').first,
+            ),
           ],
         ),
         const SizedBox(height: 20),
 
-        _SectionCard(children: [
-          _InfoTile(icon: Icons.email_outlined, label: 'Email', value: user.email),
-          if (user.phone != null && user.phone!.isNotEmpty)
-            _InfoTile(icon: Icons.phone_outlined, label: 'Phone', value: user.phone!),
-          if (user.address != null && user.address!.isNotEmpty)
-            _InfoTile(icon: Icons.location_on_outlined, label: 'Address', value: user.address!),
-          if (user.bio != null && user.bio!.isNotEmpty)
-            _InfoTile(icon: Icons.info_outline, label: 'Bio', value: user.bio!),
-        ]),
+        _SectionCard(
+          children: [
+            _InfoTile(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: user.email,
+            ),
+            if (user.phone != null && user.phone!.isNotEmpty)
+              _InfoTile(
+                icon: Icons.phone_outlined,
+                label: 'Phone',
+                value: user.phone!,
+              ),
+            if (user.address != null && user.address!.isNotEmpty)
+              _InfoTile(
+                icon: Icons.location_on_outlined,
+                label: 'Address',
+                value: user.address!,
+              ),
+            if (user.bio != null && user.bio!.isNotEmpty)
+              _InfoTile(
+                icon: Icons.info_outline,
+                label: 'Bio',
+                value: user.bio!,
+              ),
+          ],
+        ),
         const SizedBox(height: 20),
 
-        _SectionCard(children: [
-          _LinkTile(icon: Icons.pets, label: 'My Pets', onTap: () => GoRouter.of(context).go('/pets')),
-          _LinkTile(icon: Icons.calendar_today_outlined, label: 'Appointments', onTap: () => GoRouter.of(context).go('/appointments')),
-          _LinkTile(icon: Icons.medical_services_outlined, label: 'Medical Records', onTap: () => GoRouter.of(context).go('/medical')),
-          _LinkTile(icon: Icons.vaccines, label: 'Vaccinations', onTap: () => GoRouter.of(context).go('/vaccinations')),
-          _LinkTile(icon: Icons.settings_outlined, label: 'Settings', onTap: () => GoRouter.of(context).go('/settings')),
-        ]),
+        _SectionCard(
+          children: [
+            _LinkTile(
+              icon: Icons.pets,
+              label: 'My Pets',
+              onTap: () => GoRouter.of(context).go('/pets'),
+            ),
+            _LinkTile(
+              icon: Icons.calendar_today_outlined,
+              label: 'Appointments',
+              onTap: () => GoRouter.of(context).go('/appointments'),
+            ),
+            _LinkTile(
+              icon: Icons.medical_services_outlined,
+              label: 'Medical Records',
+              onTap: () => GoRouter.of(context).go('/medical'),
+            ),
+            _LinkTile(
+              icon: Icons.vaccines,
+              label: 'Vaccinations',
+              onTap: () => GoRouter.of(context).go('/vaccinations'),
+            ),
+            _LinkTile(
+              icon: Icons.settings_outlined,
+              label: 'Settings',
+              onTap: () => GoRouter.of(context).go('/settings'),
+            ),
+            if (user.isAdmin)
+              _LinkTile(
+                icon: Icons.admin_panel_settings_outlined,
+                label: 'Admin Dashboard',
+                onTap: () => GoRouter.of(context).go('/admin'),
+              ),
+          ],
+        ),
         const SizedBox(height: 20),
 
         _LogoutButton(),
@@ -230,14 +358,14 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        text.toUpperCase(),
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: Theme.of(context).colorScheme.primary,
-          letterSpacing: 1.1,
-        ),
-      );
+    text.toUpperCase(),
+    style: TextStyle(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: Theme.of(context).colorScheme.primary,
+      letterSpacing: 1.1,
+    ),
+  );
 }
 
 class _LogoutButton extends StatelessWidget {
@@ -252,7 +380,9 @@ class _LogoutButton extends StatelessWidget {
         },
         icon: const Icon(Icons.logout, color: Colors.red),
         label: const Text('Log Out', style: TextStyle(color: Colors.red)),
-        style: OutlinedButton.styleFrom(side: const BorderSide(color: Colors.red)),
+        style: OutlinedButton.styleFrom(
+          side: const BorderSide(color: Colors.red),
+        ),
       ),
     );
   }
@@ -263,7 +393,11 @@ class _StatTile extends StatelessWidget {
   final String label;
   final IconData icon;
 
-  const _StatTile({required this.value, required this.label, required this.icon});
+  const _StatTile({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -283,8 +417,19 @@ class _StatTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15), overflow: TextOverflow.ellipsis, maxLines: 1),
-                  Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade500)),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  ),
+                  Text(
+                    label,
+                    style: TextStyle(fontSize: 11, color: Colors.grey.shade500),
+                  ),
                 ],
               ),
             ),
@@ -305,13 +450,20 @@ class _SectionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
           for (int i = 0; i < children.length; i++) ...[
             children[i],
-            if (i < children.length - 1) Divider(height: 1, indent: 52, color: Colors.grey.shade100),
+            if (i < children.length - 1)
+              Divider(height: 1, indent: 52, color: Colors.grey.shade100),
           ],
         ],
       ),
@@ -324,14 +476,28 @@ class _InfoTile extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoTile({required this.icon, required this.label, required this.value});
+  const _InfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
-      title: Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-      subtitle: Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+      leading: Icon(
+        icon,
+        color: Theme.of(context).colorScheme.primary,
+        size: 22,
+      ),
+      title: Text(
+        label,
+        style: const TextStyle(fontSize: 12, color: Colors.grey),
+      ),
+      subtitle: Text(
+        value,
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+      ),
       dense: true,
     );
   }
@@ -342,13 +508,21 @@ class _LinkTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _LinkTile({required this.icon, required this.label, required this.onTap});
+  const _LinkTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
       onTap: onTap,
-      leading: Icon(icon, color: Theme.of(context).colorScheme.primary, size: 22),
+      leading: Icon(
+        icon,
+        color: Theme.of(context).colorScheme.primary,
+        size: 22,
+      ),
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
       trailing: const Icon(Icons.chevron_right, color: Colors.grey),
       dense: true,
@@ -385,7 +559,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _addressController = TextEditingController(text: user.address ?? '');
     _bioController = TextEditingController(text: user.bio ?? '');
     _clinicController = TextEditingController(text: user.clinicName ?? '');
-    _specializationController = TextEditingController(text: user.specialization ?? '');
+    _specializationController = TextEditingController(
+      text: user.specialization ?? '',
+    );
   }
 
   @override
@@ -400,7 +576,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _pickPhoto() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery, imageQuality: 70);
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
     if (picked != null) setState(() => _pickedImage = picked);
   }
 
@@ -414,17 +593,34 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       String? photoUrl = user.photoUrl;
       if (_pickedImage != null) {
-        photoUrl = await StorageService().uploadProfilePhoto(user.id, _pickedImage!);
+        photoUrl = await StorageService().uploadProfilePhoto(
+          user.id,
+          _pickedImage!,
+        );
       }
 
       final updated = user.copyWith(
         name: _nameController.text.trim(),
-        phone: _phoneController.text.trim().isEmpty ? null : _phoneController.text.trim(),
-        address: _addressController.text.trim().isEmpty ? null : _addressController.text.trim(),
-        bio: _bioController.text.trim().isEmpty ? null : _bioController.text.trim(),
+        phone: _phoneController.text.trim().isEmpty
+            ? null
+            : _phoneController.text.trim(),
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
+        bio: _bioController.text.trim().isEmpty
+            ? null
+            : _bioController.text.trim(),
         photoUrl: photoUrl,
-        clinicName: user.isVet ? (_clinicController.text.trim().isEmpty ? null : _clinicController.text.trim()) : null,
-        specialization: user.isVet ? (_specializationController.text.trim().isEmpty ? null : _specializationController.text.trim()) : null,
+        clinicName: user.isVet
+            ? (_clinicController.text.trim().isEmpty
+                  ? null
+                  : _clinicController.text.trim())
+            : null,
+        specialization: user.isVet
+            ? (_specializationController.text.trim().isEmpty
+                  ? null
+                  : _specializationController.text.trim())
+            : null,
       );
 
       await AuthService().updateUser(updated);
@@ -435,9 +631,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       if (mounted) context.pop();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to save: $e')));
       }
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -451,13 +647,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Edit Profile', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Edit Profile',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         actions: [
           TextButton(
             onPressed: _saving ? null : _save,
             child: _saving
-                ? const SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+                ? const SizedBox(
+                    height: 18,
+                    width: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Text(
+                    'Save',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -474,12 +687,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   children: [
                     CircleAvatar(
                       radius: 52,
-                      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                      backgroundColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.1,
+                      ),
                       backgroundImage: _pickedImage != null
-                          ? (kIsWeb ? NetworkImage(_pickedImage!.path) : FileImage(File(_pickedImage!.path))) as ImageProvider
-                          : (user.photoUrl != null ? NetworkImage(user.photoUrl!) as ImageProvider : null),
+                          ? (kIsWeb
+                                    ? NetworkImage(_pickedImage!.path)
+                                    : FileImage(File(_pickedImage!.path)))
+                                as ImageProvider
+                          : (user.photoUrl != null
+                                ? NetworkImage(user.photoUrl!) as ImageProvider
+                                : null),
                       child: (_pickedImage == null && user.photoUrl == null)
-                          ? Icon(Icons.person, size: 52, color: theme.colorScheme.primary)
+                          ? Icon(
+                              Icons.person,
+                              size: 52,
+                              color: theme.colorScheme.primary,
+                            )
                           : null,
                     ),
                     Positioned(
@@ -488,7 +712,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: CircleAvatar(
                         radius: 16,
                         backgroundColor: theme.colorScheme.primary,
-                        child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          size: 16,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ],
@@ -499,22 +727,32 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               TextFormField(
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(labelText: 'Full Name', prefixIcon: Icon(Icons.person_outline)),
-                validator: (v) => v == null || v.trim().isEmpty ? 'Name is required' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Full Name',
+                  prefixIcon: Icon(Icons.person_outline),
+                ),
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Name is required' : null,
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(labelText: 'Phone (optional)', prefixIcon: Icon(Icons.phone_outlined)),
+                decoration: const InputDecoration(
+                  labelText: 'Phone (optional)',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                ),
               ),
               const SizedBox(height: 16),
 
               TextFormField(
                 controller: _addressController,
                 textCapitalization: TextCapitalization.sentences,
-                decoration: const InputDecoration(labelText: 'Address (optional)', prefixIcon: Icon(Icons.location_on_outlined)),
+                decoration: const InputDecoration(
+                  labelText: 'Address (optional)',
+                  prefixIcon: Icon(Icons.location_on_outlined),
+                ),
               ),
               const SizedBox(height: 16),
 
@@ -534,18 +772,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 const SizedBox(height: 20),
                 Divider(color: Colors.grey.shade200),
                 const SizedBox(height: 8),
-                Text('Clinic Information', style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.primary, fontWeight: FontWeight.w600)),
+                Text(
+                  'Clinic Information',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: theme.colorScheme.primary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
                 const SizedBox(height: 12),
                 TextFormField(
                   controller: _clinicController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Clinic Name', prefixIcon: Icon(Icons.local_hospital_outlined)),
+                  decoration: const InputDecoration(
+                    labelText: 'Clinic Name',
+                    prefixIcon: Icon(Icons.local_hospital_outlined),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _specializationController,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Specialization', prefixIcon: Icon(Icons.workspace_premium_outlined)),
+                  decoration: const InputDecoration(
+                    labelText: 'Specialization',
+                    prefixIcon: Icon(Icons.workspace_premium_outlined),
+                  ),
                 ),
               ],
 
@@ -555,8 +805,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 child: ElevatedButton(
                   onPressed: _saving ? null : _save,
                   child: _saving
-                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                      : const Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Save Changes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
             ],
@@ -579,20 +842,52 @@ class _BottomNav extends StatelessWidget {
       selectedIndex: currentIndex,
       onDestinationSelected: (index) {
         switch (index) {
-          case 0: context.go('/home'); break;
-          case 1: context.go('/pets'); break;
-          case 2: context.go('/appointments'); break;
-          case 3: context.go('/marketplace'); break;
-          case 4: context.go('/profile'); break;
+          case 0:
+            context.go('/home');
+            break;
+          case 1:
+            context.go('/pets');
+            break;
+          case 2:
+            context.go('/appointments');
+            break;
+          case 3:
+            context.go('/marketplace');
+            break;
+          case 4:
+            context.go('/profile');
+            break;
         }
       },
-      indicatorColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+      indicatorColor: Theme.of(
+        context,
+      ).colorScheme.primary.withValues(alpha: 0.15),
       destinations: const [
-        NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Home'),
-        NavigationDestination(icon: Icon(Icons.pets_outlined), selectedIcon: Icon(Icons.pets), label: 'Pets'),
-        NavigationDestination(icon: Icon(Icons.calendar_today_outlined), selectedIcon: Icon(Icons.calendar_today), label: 'Appointments'),
-        NavigationDestination(icon: Icon(Icons.storefront_outlined), selectedIcon: Icon(Icons.storefront), label: 'Market'),
-        NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profile'),
+        NavigationDestination(
+          icon: Icon(Icons.home_outlined),
+          selectedIcon: Icon(Icons.home),
+          label: 'Home',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.pets_outlined),
+          selectedIcon: Icon(Icons.pets),
+          label: 'Pets',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.calendar_today_outlined),
+          selectedIcon: Icon(Icons.calendar_today),
+          label: 'Appointments',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.storefront_outlined),
+          selectedIcon: Icon(Icons.storefront),
+          label: 'Market',
+        ),
+        NavigationDestination(
+          icon: Icon(Icons.person_outline),
+          selectedIcon: Icon(Icons.person),
+          label: 'Profile',
+        ),
       ],
     );
   }

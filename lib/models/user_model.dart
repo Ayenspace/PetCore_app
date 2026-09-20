@@ -1,4 +1,4 @@
-enum UserRole { petOwner, vet }
+enum UserRole { petOwner, vet, admin }
 
 class UserModel {
   final String id;
@@ -31,36 +31,37 @@ class UserModel {
 
   bool get isVet => role == UserRole.vet;
   bool get isPetOwner => role == UserRole.petOwner;
+  bool get isAdmin => role == UserRole.admin;
 
   factory UserModel.fromMap(Map<String, dynamic> map) => UserModel(
-        id: map['id'],
-        name: map['name'],
-        email: map['email'],
-        phone: map['phone'],
-        address: map['address'],
-        bio: map['bio'],
-        photoUrl: map['photoUrl'],
-        role: UserRole.values.byName(map['role'] ?? 'petOwner'),
-        isSeller: map['isSeller'] ?? false,
-        clinicName: map['clinicName'],
-        specialization: map['specialization'],
-        createdAt: DateTime.parse(map['createdAt']),
-      );
+    id: map['id'],
+    name: map['name'],
+    email: map['email'],
+    phone: map['phone'],
+    address: map['address'],
+    bio: map['bio'],
+    photoUrl: map['photoUrl'],
+    role: UserRole.values.byName(map['role'] ?? 'petOwner'),
+    isSeller: map['isSeller'] ?? false,
+    clinicName: map['clinicName'],
+    specialization: map['specialization'],
+    createdAt: DateTime.parse(map['createdAt']),
+  );
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'name': name,
-        'email': email,
-        'phone': phone,
-        'address': address,
-        'bio': bio,
-        'photoUrl': photoUrl,
-        'role': role.name,
-        'isSeller': isSeller,
-        'clinicName': clinicName,
-        'specialization': specialization,
-        'createdAt': createdAt.toIso8601String(),
-      };
+    'id': id,
+    'name': name,
+    'email': email,
+    'phone': phone,
+    'address': address,
+    'bio': bio,
+    'photoUrl': photoUrl,
+    'role': role.name,
+    'isSeller': isSeller,
+    'clinicName': clinicName,
+    'specialization': specialization,
+    'createdAt': createdAt.toIso8601String(),
+  };
 
   UserModel copyWith({
     String? name,
@@ -71,19 +72,18 @@ class UserModel {
     bool? isSeller,
     String? clinicName,
     String? specialization,
-  }) =>
-      UserModel(
-        id: id,
-        name: name ?? this.name,
-        email: email,
-        phone: phone ?? this.phone,
-        address: address ?? this.address,
-        bio: bio ?? this.bio,
-        photoUrl: photoUrl ?? this.photoUrl,
-        role: role,
-        isSeller: isSeller ?? this.isSeller,
-        clinicName: clinicName ?? this.clinicName,
-        specialization: specialization ?? this.specialization,
-        createdAt: createdAt,
-      );
+  }) => UserModel(
+    id: id,
+    name: name ?? this.name,
+    email: email,
+    phone: phone ?? this.phone,
+    address: address ?? this.address,
+    bio: bio ?? this.bio,
+    photoUrl: photoUrl ?? this.photoUrl,
+    role: role,
+    isSeller: isSeller ?? this.isSeller,
+    clinicName: clinicName ?? this.clinicName,
+    specialization: specialization ?? this.specialization,
+    createdAt: createdAt,
+  );
 }

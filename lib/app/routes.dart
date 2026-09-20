@@ -29,6 +29,9 @@ import '../screens/settings/settings_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/repots/reports_screen.dart';
 import '../screens/analytics/health_analytics_screen.dart';
+import '../screens/admin/admin_dashboard_screen.dart';
+import '../screens/admin/admin_users_screen.dart';
+import '../screens/admin/admin_reports_screen.dart';
 import '../models/appointment_model.dart';
 
 class AppRouter {
@@ -53,6 +56,9 @@ class AppRouter {
 
         if (auth.status == AuthStatus.authenticated) {
           if (location == '/splash' || authRoutes.contains(location)) {
+            return auth.user?.isAdmin == true ? '/admin' : '/home';
+          }
+          if (location.startsWith('/admin') && auth.user?.isAdmin != true) {
             return '/home';
           }
           return null;
@@ -86,6 +92,18 @@ class AppRouter {
           builder: (c, s) => const ForgotPasswordScreen(),
         ),
         GoRoute(path: '/home', builder: (c, s) => const HomeScreen()),
+        GoRoute(
+          path: '/admin',
+          builder: (c, s) => const AdminDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/admin/users',
+          builder: (c, s) => const AdminUsersScreen(),
+        ),
+        GoRoute(
+          path: '/admin/reports',
+          builder: (c, s) => const AdminReportsScreen(),
+        ),
         GoRoute(path: '/pets', builder: (c, s) => const PetsScreen()),
         GoRoute(path: '/pets/add', builder: (c, s) => const AddPetScreen()),
         GoRoute(
