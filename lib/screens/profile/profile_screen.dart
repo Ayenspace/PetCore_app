@@ -84,7 +84,11 @@ class ProfileScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
-                        user.isVet ? '🩺 Veterinarian' : '🐾 Pet Owner',
+                        user.isAdmin
+                            ? 'Administrator'
+                            : user.isVet
+                            ? 'Veterinarian'
+                            : 'Pet Owner',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 12,
@@ -106,13 +110,109 @@ class ProfileScreen extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.all(20),
-              child: user.isVet
+                child: user.isAdmin
+                  ? _AdminProfileBody(user: user)
+                  : user.isVet
                   ? _VetProfileBody(user: user)
                   : _OwnerProfileBody(user: user, petCount: petCount),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AdminProfileBody extends StatelessWidget {
+  final UserModel user;
+
+  const _AdminProfileBody({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _StatTile(
+              icon: Icons.admin_panel_settings_outlined,
+              label: 'Role',
+              value: 'Administrator',
+            ),
+            const SizedBox(width: 12),
+            _StatTile(
+              icon: Icons.alternate_email,
+              label: 'Username',
+              value: user.email.split('@').first,
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _SectionLabel('Account Information'),
+        const SizedBox(height: 8),
+        _SectionCard(
+          children: [
+            _InfoTile(
+              icon: Icons.email_outlined,
+              label: 'Email',
+              value: user.email,
+            ),
+            if (user.phone != null && user.phone!.isNotEmpty)
+              _InfoTile(
+                icon: Icons.phone_outlined,
+                label: 'Phone',
+                value: user.phone!,
+              ),
+            if (user.address != null && user.address!.isNotEmpty)
+              _InfoTile(
+                icon: Icons.location_on_outlined,
+                label: 'Address',
+                value: user.address!,
+              ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _SectionLabel('Administration'),
+        const SizedBox(height: 8),
+        _SectionCard(
+          children: [
+            _LinkTile(
+              icon: Icons.dashboard_outlined,
+              label: 'Admin Dashboard',
+              onTap: () => GoRouter.of(context).go('/admin'),
+            ),
+            _LinkTile(
+              icon: Icons.people_outline,
+              label: 'Manage Users',
+              onTap: () => GoRouter.of(context).go('/admin/users'),
+            ),
+            _LinkTile(
+              icon: Icons.calendar_today_outlined,
+              label: 'Manage Appointments',
+              onTap: () => GoRouter.of(context).go('/admin/appointments'),
+            ),
+            _LinkTile(
+              icon: Icons.analytics_outlined,
+              label: 'Reports',
+              onTap: () => GoRouter.of(context).go('/admin/reports'),
+            ),
+            _LinkTile(
+              icon: Icons.storefront_outlined,
+              label: 'Marketplace',
+              onTap: () => GoRouter.of(context).go('/marketplace'),
+            ),
+            _LinkTile(
+              icon: Icons.settings_outlined,
+              label: 'Settings',
+              onTap: () => GoRouter.of(context).go('/settings'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 20),
+        _LogoutButton(),
+        const SizedBox(height: 20),
+      ],
     );
   }
 }

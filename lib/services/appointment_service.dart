@@ -8,29 +8,7 @@ class AppointmentService {
   DatabaseReference _vetRef(String vetId) => _db.ref('vet_appointments/$vetId');
 
   Future<AppointmentModel> addAppointment(AppointmentModel appointment) async {
-    final existing = await _vetRef(appointment.vetId).get();
-    if (existing.exists && existing.value is Map) {
-      final appointments = Map<String, dynamic>.from(
-        (existing.value as Map).map(
-          (key, value) => MapEntry(key.toString(), value),
-        ),
-      );
-      final hasConflict = appointments.values.any((value) {
-        if (value is! Map) return false;
-        final data = Map<String, dynamic>.from(
-          value.map((key, item) => MapEntry(key.toString(), item)),
-        );
-        final status = data['status']?.toString();
-        final dateTime = DateTime.tryParse(data['dateTime']?.toString() ?? '');
-        return status == AppointmentStatus.upcoming.name &&
-            dateTime != null &&
-            dateTime.isAtSameMomentAs(appointment.dateTime);
-      });
-
-      if (hasConflict) {
-        throw AppointmentConflictException();
-      }
-    }
+    await _ensureNoConflict(appointment);
 
     final ownerRef = _ref(appointment.ownerId).push();
     final vetRef = _vetRef(appointment.vetId).push();
@@ -58,6 +36,7 @@ class AppointmentService {
   }
 
   Future<void> updateAppointment(AppointmentModel appointment) async {
+    await _ensureNoConflict(appointment, excludeId: appointment.id);
     await _ref(
       appointment.ownerId,
     ).child(appointment.id).update(appointment.toMap());
@@ -66,6 +45,40 @@ class AppointmentService {
         appointment.vetId,
       ).child(appointment.id).update(appointment.toMap());
     }
+  }
+
+  Future<void> _ensureNoConflict(
+    AppointmentModel appointment, {
+    String? excludeId,
+  }) async {
+    if (appointment.vetId.isEmpty ||
+        appointment.status != AppointmentStatus.upcoming) {
+      return;
+    }
+
+    final existing = await _vetRef(appointment.vetId).get();
+    if (!existing.exists || existing.value is! Map) return;
+
+    final appointments = Map<String, dynamic>.from(
+      (existing.value as Map).map(
+        (key, value) => MapEntry(key.toString(), value),
+      ),
+    );
+    final hasConflict = appointments.entries.any((entry) {
+      if (entry.key == excludeId || entry.value is! Map) return false;
+      final data = Map<String, dynamic>.from(
+        (entry.value as Map).map(
+          (key, item) => MapEntry(key.toString(), item),
+        ),
+      );
+      final status = data['status']?.toString();
+      final dateTime = DateTime.tryParse(data['dateTime']?.toString() ?? '');
+      return status == AppointmentStatus.upcoming.name &&
+          dateTime != null &&
+          dateTime.isAtSameMomentAs(appointment.dateTime);
+    });
+
+    if (hasConflict) throw AppointmentConflictException();
   }
 
   Future<void> updateStatus(

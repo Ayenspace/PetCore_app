@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../widgets/admin_navigation.dart';
+import '../../widgets/admin_drawer.dart';
 
 class AdminDashboardScreen extends StatelessWidget {
   const AdminDashboardScreen({super.key});
@@ -19,6 +20,7 @@ class AdminDashboardScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      drawer: const AdminDrawer(),
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         actions: [
@@ -126,8 +128,7 @@ class AdminDashboardScreen extends StatelessWidget {
                   title: 'Appointments',
                   subtitle:
                       '${_countNested(appointments)} appointments across owners',
-                  onTap: () =>
-                      _showComingSoon(context, 'Appointment management'),
+                  onTap: () => context.push('/admin/appointments'),
                 ),
                 _AdminActionTile(
                   icon: Icons.storefront_outlined,

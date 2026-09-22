@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/appointment_model.dart';
 import '../../providers/appointment_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../services/weight_service.dart';
 
 class AppointmentDetailsScreen extends StatelessWidget {
   final String appointmentId;
@@ -142,6 +143,15 @@ class AppointmentDetailsScreen extends StatelessWidget {
               onPressed: () => context.push('/medical/add', extra: appointment),
               icon: const Icon(Icons.note_add_outlined),
               label: const Text('Add clinical record'),
+            ),
+          ],
+
+          if (isVet) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => _showWeightDialog(context, appointment),
+              icon: const Icon(Icons.monitor_weight_outlined),
+              label: const Text('Update weight'),
             ),
           ],
 
@@ -320,5 +330,72 @@ class AppointmentDetailsScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _showWeightDialog(
+    BuildContext context,
+    AppointmentModel appointment,
+  ) async {
+    final controller = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+    final weight = await showDialog<double>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Update ${appointment.petName} weight'),
+        content: Form(
+          key: formKey,
+          child: TextFormField(
+            controller: controller,
+            autofocus: true,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            decoration: const InputDecoration(
+              labelText: 'Weight',
+              suffixText: 'kg',
+            ),
+            validator: (value) {
+              final parsed = double.tryParse(value?.trim() ?? '');
+              if (parsed == null || parsed <= 0) return 'Enter a valid weight';
+              return null;
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (formKey.currentState!.validate()) {
+                Navigator.pop(context, double.parse(controller.text.trim()));
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+
+    if (weight == null || !context.mounted) return;
+    try {
+      await WeightService().addVetEntry(
+        ownerId: appointment.ownerId,
+        petId: appointment.petId,
+        appointmentId: appointment.id,
+        weight: weight,
+      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Weight history updated')));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not update weight')),
+        );
+      }
+    }
   }
 }

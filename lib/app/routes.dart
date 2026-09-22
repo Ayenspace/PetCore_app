@@ -8,6 +8,7 @@ import '../screens/authentication/login_screen.dart';
 import '../screens/authentication/register_screen.dart';
 import '../screens/authentication/fogort_password_screen.dart';
 import '../screens/home/home_screen.dart';
+import '../screens/home/vet_dashboard_screen.dart';
 import '../screens/pets/pets_screen.dart';
 import '../screens/pets/pet_details_screen.dart';
 import '../screens/appointments/appointments.dart';
@@ -32,6 +33,8 @@ import '../screens/analytics/health_analytics_screen.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/admin_users_screen.dart';
 import '../screens/admin/admin_reports_screen.dart';
+import '../screens/admin/admin_account_preview_screen.dart';
+import '../screens/admin/admin_appointments_screen.dart';
 import '../models/appointment_model.dart';
 
 class AppRouter {
@@ -56,9 +59,22 @@ class AppRouter {
 
         if (auth.status == AuthStatus.authenticated) {
           if (location == '/splash' || authRoutes.contains(location)) {
-            return auth.user?.isAdmin == true ? '/admin' : '/home';
+            return _homeForRole(auth);
           }
-          if (location.startsWith('/admin') && auth.user?.isAdmin != true) {
+          if (auth.user?.isAdmin == true &&
+              !location.startsWith('/admin') &&
+              !location.startsWith('/marketplace') &&
+              location != '/settings' &&
+              !location.startsWith('/profile')) {
+            return '/admin';
+          }
+          if (auth.user?.isAdmin != true && location.startsWith('/admin')) {
+            return _homeForRole(auth);
+          }
+          if (auth.user?.isVet == true && location == '/home') {
+            return '/vet';
+          }
+          if (location == '/vet' && auth.user?.isVet != true) {
             return '/home';
           }
           return null;
@@ -93,6 +109,10 @@ class AppRouter {
         ),
         GoRoute(path: '/home', builder: (c, s) => const HomeScreen()),
         GoRoute(
+          path: '/vet',
+          builder: (c, s) => const VetDashboardScreen(),
+        ),
+        GoRoute(
           path: '/admin',
           builder: (c, s) => const AdminDashboardScreen(),
         ),
@@ -101,8 +121,18 @@ class AppRouter {
           builder: (c, s) => const AdminUsersScreen(),
         ),
         GoRoute(
+          path: '/admin/users/:id/preview',
+          builder: (c, s) => AdminAccountPreviewScreen(
+            userId: s.pathParameters['id']!,
+          ),
+        ),
+        GoRoute(
           path: '/admin/reports',
           builder: (c, s) => const AdminReportsScreen(),
+        ),
+        GoRoute(
+          path: '/admin/appointments',
+          builder: (c, s) => const AdminAppointmentsScreen(),
         ),
         GoRoute(path: '/pets', builder: (c, s) => const PetsScreen()),
         GoRoute(path: '/pets/add', builder: (c, s) => const AddPetScreen()),
@@ -197,5 +227,11 @@ class AppRouter {
         ),
       ],
     );
+  }
+
+  static String _homeForRole(AppAuthProvider auth) {
+    if (auth.user?.isAdmin == true) return '/admin';
+    if (auth.user?.isVet == true) return '/vet';
+    return '/home';
   }
 }

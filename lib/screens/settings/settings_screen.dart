@@ -71,14 +71,16 @@ class SettingsScreen extends StatelessWidget {
           ),
           const Divider(height: 1),
 
-          _SectionHeader('Notifications'),
-          ListTile(
-            leading: const Icon(Icons.notifications_outlined),
-            title: const Text('Notifications'),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => context.push('/notifications'),
-          ),
-          const Divider(height: 1),
+          if (user?.isAdmin != true) ...[
+            _SectionHeader('Notifications'),
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('Notifications'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => context.push('/notifications'),
+            ),
+            const Divider(height: 1),
+          ],
 
           _SectionHeader('About'),
           ListTile(

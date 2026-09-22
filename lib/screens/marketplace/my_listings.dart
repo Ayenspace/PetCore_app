@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../models/marketplace_model.dart';
 import '../../models/marketplace_order_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../providers/marketplace_provider.dart';
 
 class MyListingsScreen extends StatefulWidget {
@@ -185,6 +186,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final provider = context.watch<MarketplaceProvider>();
+    final currency = context.watch<CurrencyProvider>();
     final user = context.read<AppAuthProvider>().user;
     final listings = user == null
         ? <MarketplaceModel>[]
@@ -270,7 +272,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             style: const TextStyle(fontWeight: FontWeight.bold),
                           ),
                           subtitle: Text(
-                            'KSh ${listing.price.toStringAsFixed(0)} • ${listing.category.name}',
+                            '${currency.format(listing.price)} • ${listing.category.name}',
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,

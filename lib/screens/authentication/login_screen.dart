@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
 
 const _kRememberKey = 'remember_me_email';
+const _kRememberPasswordKey = 'remember_me_password';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -44,9 +45,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   Future<void> _loadSavedEmail() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_kRememberKey);
+    final savedPassword = prefs.getString(_kRememberPasswordKey);
     if (saved != null && saved.isNotEmpty && mounted) {
       setState(() {
         _emailController.text = saved;
+        _passwordController.text = savedPassword ?? '';
         _rememberMe = true;
       });
     }
@@ -65,12 +68,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     if (!_formKey.currentState!.validate()) return;
     final auth = context.read<AppAuthProvider>();
     auth.clearError();
-    final prefs = await SharedPreferences.getInstance();
-    if (_rememberMe) {
-      await prefs.setString(_kRememberKey, _emailController.text.trim());
-    } else {
-      await prefs.remove(_kRememberKey);
-    }
 
     final success = await auth.login(
       email: _emailController.text.trim(),
@@ -78,6 +75,14 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     );
 
     if (success && mounted) {
+      final prefs = await SharedPreferences.getInstance();
+      if (_rememberMe) {
+        await prefs.setString(_kRememberKey, _emailController.text.trim());
+        await prefs.setString(_kRememberPasswordKey, _passwordController.text);
+      } else {
+        await prefs.remove(_kRememberKey);
+        await prefs.remove(_kRememberPasswordKey);
+      }
       context.go('/home');
     }
   }
@@ -185,6 +190,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
+                          autofillHints: const [AutofillHints.username],
                           decoration: _inputDecoration('Email', Icons.email_outlined),
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Please enter your email';
@@ -197,6 +203,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
+                          autofillHints: const [AutofillHints.password],
                           decoration: _inputDecoration(
                             'Password',
                             Icons.lock_outline,

@@ -1,9 +1,11 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../providers/auth_provider.dart';
 import '../../widgets/admin_navigation.dart';
+import '../../widgets/admin_drawer.dart';
 
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
@@ -36,6 +38,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     final adminId = context.watch<AppAuthProvider>().user?.id;
 
     return Scaffold(
+      drawer: const AdminDrawer(),
       appBar: AppBar(title: const Text('Users')),
       bottomNavigationBar: const AdminNavigation(selectedIndex: 1),
       body: StreamBuilder<DatabaseEvent>(
@@ -214,17 +217,33 @@ class _UserTile extends StatelessWidget {
                 child: CircularProgressIndicator(strokeWidth: 2),
               )
             else
-              DropdownButton<String>(
-                value: _validRole(user.role),
-                onChanged: enabled
-                    ? (role) {
-                        if (role != null) onRoleChanged(role);
-                      }
-                    : null,
-                items: const [
-                  DropdownMenuItem(value: 'petOwner', child: Text('Pet owner')),
-                  DropdownMenuItem(value: 'vet', child: Text('Vet')),
-                  DropdownMenuItem(value: 'admin', child: Text('Admin')),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!isCurrentAdmin && user.role != 'admin')
+                    IconButton(
+                      tooltip: 'Preview account',
+                      icon: const Icon(Icons.visibility_outlined),
+                      onPressed: () => context.push(
+                        '/admin/users/${user.id}/preview',
+                      ),
+                    ),
+                  DropdownButton<String>(
+                    value: _validRole(user.role),
+                    onChanged: enabled
+                        ? (role) {
+                            if (role != null) onRoleChanged(role);
+                          }
+                        : null,
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'petOwner',
+                        child: Text('Pet owner'),
+                      ),
+                      DropdownMenuItem(value: 'vet', child: Text('Vet')),
+                      DropdownMenuItem(value: 'admin', child: Text('Admin')),
+                    ],
+                  ),
                 ],
               ),
           ],

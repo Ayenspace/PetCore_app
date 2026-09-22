@@ -153,6 +153,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   dueVaccines,
                 ),
                 const SizedBox(height: 20),
+                if (user?.isVet == true) ...[
+                  _buildVetAppointmentTrend(context, allAppointments),
+                  const SizedBox(height: 20),
+                ],
                 // Quick actions
                 _sectionLabel(context, 'Quick Actions'),
                 _buildQuickActions(context),
@@ -495,6 +499,100 @@ class _HomeScreenState extends State<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildVetAppointmentTrend(
+    BuildContext context,
+    List<AppointmentModel> appointments,
+  ) {
+    final now = DateTime.now();
+    final months = List.generate(
+      6,
+      (index) => DateTime(now.year, now.month - 5 + index),
+    );
+    final counts = months.map((month) {
+      return appointments.where((appointment) {
+        return appointment.dateTime.year == month.year &&
+            appointment.dateTime.month == month.month;
+      }).length;
+    }).toList();
+    final maxCount = counts.fold<int>(
+      0,
+      (max, count) => count > max ? count : max,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionLabel(context, 'Appointment trend'),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 12),
+            decoration: BoxDecoration(
+              color: Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: List.generate(months.length, (index) {
+                final count = counts[index];
+                final height = maxCount == 0 ? 8.0 : 72 * count / maxCount;
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      '$count',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Container(
+                      width: 22,
+                      height: height,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _monthLabel(months[index]),
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _monthLabel(DateTime month) {
+    const labels = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return labels[month.month - 1];
   }
 
   Widget _buildQuickActions(BuildContext context) {

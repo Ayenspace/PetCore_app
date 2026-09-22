@@ -17,10 +17,31 @@
       ".read": "auth != null",
       ".write": "auth != null"
     },
+    "weight_history": {
+      "$ownerId": {
+        ".read": "auth != null",
+        "$petId": {
+          "$entryId": {
+            ".write": "$ownerId == auth.uid || (root.child('users').child(auth.uid).child('role').val() == 'vet' && root.child('appointments').child($ownerId).child(newData.child('appointmentId').val()).child('vetId').val() == auth.uid && root.child('appointments').child($ownerId).child(newData.child('appointmentId').val()).child('petId').val() == $petId)",
+            ".validate": "newData.hasChildren(['id', 'petId', 'weight', 'recordedAt'])"
+          }
+        }
+      }
+    },
     "appointments": {
       "$ownerId": {
         ".read": "$ownerId == auth.uid",
-          ".write": "$ownerId == auth.uid"
+        "$appointmentId": {
+          ".write": "$ownerId == auth.uid || data.child('vetId').val() == auth.uid"
+        }
+      }
+    },
+    "vet_appointments": {
+      "$vetId": {
+        ".read": "$vetId == auth.uid",
+        "$appointmentId": {
+          ".write": "data.child('ownerId').val() == auth.uid || newData.child('ownerId').val() == auth.uid || $vetId == auth.uid"
+        }
       }
     },
     "reminders": {

@@ -19,6 +19,22 @@ class WeightService {
     );
   }
 
+  Future<void> addVetEntry({
+    required String ownerId,
+    required String petId,
+    required String appointmentId,
+    required double weight,
+  }) async {
+    final ref = _ref(ownerId, petId).push();
+    await ref.set({
+      'id': ref.key!,
+      'petId': petId,
+      'weight': weight,
+      'recordedAt': DateTime.now().toIso8601String(),
+      'appointmentId': appointmentId,
+    });
+  }
+
   Future<void> recordIfChanged(
     String ownerId,
     String petId,

@@ -5,7 +5,10 @@ import 'package:provider/provider.dart';
 
 import '../../models/marketplace_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../providers/marketplace_provider.dart';
+import '../../widgets/admin_drawer.dart';
+import '../../widgets/admin_navigation.dart';
 
 class MarketplaceScreen extends StatefulWidget {
   const MarketplaceScreen({super.key});
@@ -32,12 +35,14 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<MarketplaceProvider>();
-    final uid = context.read<AppAuthProvider>().user?.id;
+    final user = context.watch<AppAuthProvider>().user;
+    final uid = user?.id;
     final listings = provider.filtered;
     final theme = Theme.of(context);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: user?.isAdmin == true ? const AdminDrawer() : null,
       appBar: AppBar(
         title: const Text('Marketplace', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
@@ -53,7 +58,9 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           ),
         ],
       ),
-      bottomNavigationBar: _BottomNav(currentIndex: 3),
+        bottomNavigationBar: user?.isAdmin == true
+          ? const AdminNavigation(selectedIndex: 3)
+          : _BottomNav(currentIndex: 3),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -192,6 +199,7 @@ class _ListingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final currency = context.watch<CurrencyProvider>();
 
     return GestureDetector(
       onTap: () => context.push('/marketplace/${listing.id}'),
@@ -236,7 +244,7 @@ class _ListingCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    'KSh ${listing.price.toStringAsFixed(0)}',
+                    currency.format(listing.price),
                     style: TextStyle(
                       color: theme.colorScheme.primary,
                       fontWeight: FontWeight.w700,

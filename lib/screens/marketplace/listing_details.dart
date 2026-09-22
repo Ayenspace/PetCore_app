@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../models/marketplace_model.dart';
 import '../../models/marketplace_order_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/currency_provider.dart';
 import '../../providers/marketplace_provider.dart';
 
 class ListingDetailsScreen extends StatefulWidget {
@@ -151,6 +152,7 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<MarketplaceProvider>();
     final listing = provider.getById(widget.listingId);
+    final currency = context.watch<CurrencyProvider>();
     final theme = Theme.of(context);
 
     // If listing was just deleted and we haven't navigated yet, show loading
@@ -248,7 +250,7 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
 
                   // Price
                   Text(
-                    'KSh ${listing.price.toStringAsFixed(0)}',
+                    currency.format(listing.price),
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w800,
