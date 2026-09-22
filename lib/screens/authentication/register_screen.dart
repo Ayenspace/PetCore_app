@@ -26,21 +26,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppAuthProvider>().addListener(_onAuthChanged);
-    });
-  }
-
-  void _onAuthChanged() {
-    final auth = context.read<AppAuthProvider>();
-    if (auth.status == AuthStatus.authenticated && mounted) {
-      context.go('/home');
-    }
   }
 
   @override
   void dispose() {
-    context.read<AppAuthProvider>().removeListener(_onAuthChanged);
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -62,9 +51,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       specialization: _selectedRole == UserRole.vet ? _specializationController.text.trim() : null,
     );
 
-    if (success && mounted) {
-      context.go('/home');
-    }
   }
 
   @override

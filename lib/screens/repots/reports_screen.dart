@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
@@ -24,13 +23,6 @@ class ReportsScreen extends StatelessWidget {
           'Health Reports',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        actions: [
-          IconButton(
-            tooltip: 'Health analytics',
-            icon: const Icon(Icons.insights_outlined),
-            onPressed: () => context.push('/analytics'),
-          ),
-        ],
       ),
       body: pets.isEmpty
           ? Center(

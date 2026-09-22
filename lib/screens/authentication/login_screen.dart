@@ -29,17 +29,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
     _fadeIn = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
     _animController.forward();
     _loadSavedEmail();
-    // Navigate when auth state becomes authenticated
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<AppAuthProvider>().addListener(_onAuthChanged);
-    });
-  }
-
-  void _onAuthChanged() {
-    final auth = context.read<AppAuthProvider>();
-    if (auth.status == AuthStatus.authenticated && mounted) {
-      context.go('/home');
-    }
   }
 
   Future<void> _loadSavedEmail() async {
@@ -57,7 +46,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
 
   @override
   void dispose() {
-    context.read<AppAuthProvider>().removeListener(_onAuthChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _animController.dispose();
@@ -83,7 +71,6 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
         await prefs.remove(_kRememberKey);
         await prefs.remove(_kRememberPasswordKey);
       }
-      context.go('/home');
     }
   }
 

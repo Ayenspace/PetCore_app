@@ -15,6 +15,7 @@ class AdminUsersScreen extends StatefulWidget {
 }
 
 class _AdminUsersScreenState extends State<AdminUsersScreen> {
+  static final _usersStream = FirebaseDatabase.instance.ref('users').onValue;
   final _searchController = TextEditingController();
   String _query = '';
   String? _updatingUserId;
@@ -42,7 +43,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       appBar: AppBar(title: const Text('Users')),
       bottomNavigationBar: const AdminNavigation(selectedIndex: 1),
       body: StreamBuilder<DatabaseEvent>(
-        stream: FirebaseDatabase.instance.ref('users').onValue,
+        stream: _usersStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(

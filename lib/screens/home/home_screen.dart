@@ -395,11 +395,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildFocusCard(BuildContext context, List<_FocusItem> items) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
@@ -428,14 +429,15 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   title: Text(
                     item.label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                   trailing: Icon(
                     Icons.chevron_right,
-                    color: Colors.grey.shade400,
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
                     size: 18,
                   ),
                   dense: true,
@@ -445,7 +447,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: 1,
                     indent: 64,
                     endIndent: 16,
-                    color: Colors.grey.shade100,
+                    color: theme.dividerColor,
                   ),
               ],
             );
@@ -734,14 +736,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _sectionLabel(BuildContext context, String label) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
       child: Text(
         label,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.bold,
-          color: Color(0xFF1A1A2E),
+          color: theme.colorScheme.onSurface,
         ),
       ),
     );

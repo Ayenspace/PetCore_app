@@ -9,6 +9,7 @@ import '../screens/authentication/register_screen.dart';
 import '../screens/authentication/fogort_password_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/home/vet_dashboard_screen.dart';
+import '../screens/home/vet_reports_screen.dart';
 import '../screens/pets/pets_screen.dart';
 import '../screens/pets/pet_details_screen.dart';
 import '../screens/appointments/appointments.dart';
@@ -29,7 +30,6 @@ import '../screens/profile/profile_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
 import '../screens/repots/reports_screen.dart';
-import '../screens/analytics/health_analytics_screen.dart';
 import '../screens/admin/admin_dashboard_screen.dart';
 import '../screens/admin/admin_users_screen.dart';
 import '../screens/admin/admin_reports_screen.dart';
@@ -40,7 +40,7 @@ import '../models/appointment_model.dart';
 class AppRouter {
   static GoRouter router(AppAuthProvider auth) {
     return GoRouter(
-      initialLocation: '/splash',
+      initialLocation: '/welcome',
       refreshListenable: auth,
       redirect: (context, state) {
         final location = state.matchedLocation;
@@ -54,7 +54,7 @@ class AppRouter {
         };
 
         if (auth.status == AuthStatus.initial) {
-          return location == '/splash' ? null : '/splash';
+          return authRoutes.contains(location) ? null : '/welcome';
         }
 
         if (auth.status == AuthStatus.authenticated) {
@@ -111,6 +111,10 @@ class AppRouter {
         GoRoute(
           path: '/vet',
           builder: (c, s) => const VetDashboardScreen(),
+        ),
+        GoRoute(
+          path: '/vet/reports',
+          builder: (c, s) => const VetReportsScreen(),
         ),
         GoRoute(
           path: '/admin',
@@ -217,10 +221,6 @@ class AppRouter {
           builder: (c, s) => const NotificationsScreen(),
         ),
         GoRoute(path: '/reports', builder: (c, s) => const ReportsScreen()),
-        GoRoute(
-          path: '/analytics',
-          builder: (c, s) => const HealthAnalyticsScreen(),
-        ),
         GoRoute(
           path: '/reports/preview',
           builder: (c, s) => const PdfPreviewScreen(),

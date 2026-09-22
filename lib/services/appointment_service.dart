@@ -11,7 +11,6 @@ class AppointmentService {
     await _ensureNoConflict(appointment);
 
     final ownerRef = _ref(appointment.ownerId).push();
-    final vetRef = _vetRef(appointment.vetId).push();
 
     final newAppt = AppointmentModel(
       id: ownerRef.key!,
@@ -28,10 +27,14 @@ class AppointmentService {
       createdAt: appointment.createdAt,
     );
 
-    await ownerRef.set(newAppt.toMap());
+    final updates = <String, dynamic>{
+      'appointments/${appointment.ownerId}/${ownerRef.key}': newAppt.toMap(),
+    };
     if (appointment.vetId.isNotEmpty) {
-      await vetRef.set(newAppt.toMap());
+      updates['vet_appointments/${appointment.vetId}/${ownerRef.key}'] =
+          newAppt.toMap();
     }
+    await _db.ref().update(updates);
     return newAppt;
   }
 

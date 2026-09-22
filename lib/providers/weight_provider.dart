@@ -8,10 +8,13 @@ class WeightProvider extends ChangeNotifier {
   final _service = WeightService();
   final Map<String, List<WeightEntry>> _history = {};
   StreamSubscription? _subscription;
+  String? _listeningOwnerId;
 
   List<WeightEntry> forPet(String petId) => _history[petId] ?? const [];
 
   void listenToWeights(String ownerId) {
+    if (_listeningOwnerId == ownerId && _subscription != null) return;
+    _listeningOwnerId = ownerId;
     _subscription?.cancel();
     _subscription = _service.stream(ownerId).listen((entries) {
       _history

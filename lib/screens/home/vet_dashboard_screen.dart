@@ -28,7 +28,7 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<AppAuthProvider>().user;
     final appointments = context.watch<AppointmentProvider>().vetAppointments;
-    final upcoming = appointments
+    final pending = appointments
         .where((appointment) =>
             appointment.status == AppointmentStatus.upcoming ||
             appointment.status == AppointmentStatus.overdue)
@@ -79,8 +79,8 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
                 ),
                 const SizedBox(width: 10),
                 _MetricCard(
-                  label: 'Upcoming',
-                  value: '${upcoming.length}',
+                  label: 'Pending',
+                  value: '${pending.length}',
                   icon: Icons.schedule_outlined,
                   color: Colors.orange,
                 ),
@@ -95,21 +95,27 @@ class _VetDashboardScreenState extends State<VetDashboardScreen> {
             ),
             const SizedBox(height: 28),
             Text(
-              'Upcoming appointments',
+              'Pending appointments',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 10),
-            if (upcoming.isEmpty)
+            if (pending.isEmpty)
               const _EmptyAppointments()
             else
-              ...upcoming.take(8).map(
+              ...pending.take(8).map(
                     (appointment) => _AppointmentPreview(
                       appointment: appointment,
                     ),
                   ),
             const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () => context.push('/vet/reports'),
+              icon: const Icon(Icons.analytics_outlined),
+              label: const Text('Appointment analytics and reports'),
+            ),
+            const SizedBox(height: 20),
             OutlinedButton.icon(
               onPressed: () => context.go('/appointments'),
               icon: const Icon(Icons.calendar_today_outlined),

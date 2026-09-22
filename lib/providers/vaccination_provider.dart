@@ -10,6 +10,7 @@ class VaccinationProvider extends ChangeNotifier {
   bool _loading = false;
   String? _error;
   StreamSubscription? _subscription;
+  String? _listeningOwnerId;
 
   List<VaccinationModel> get vaccinations => _vaccinations;
   bool get loading => _loading;
@@ -29,6 +30,8 @@ class VaccinationProvider extends ChangeNotifier {
       _vaccinations.where((v) => v.isDue).toList();
 
   void listenToVaccinations(String ownerId) {
+    if (_listeningOwnerId == ownerId && _subscription != null) return;
+    _listeningOwnerId = ownerId;
     _subscription?.cancel();
     _subscription = _service.vaccinationsStream(ownerId).listen((list) {
       _vaccinations = list;

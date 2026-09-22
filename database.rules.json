@@ -4,7 +4,7 @@
     "users": {
       ".read": "auth != null",
       "$uid": {
-        ".write": "($uid == auth.uid && (!data.exists() || data.child('role').val() == newData.child('role').val())) || (auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin')"
+        ".write": "($uid == auth.uid && (!data.exists() || data.child('role').val() == newData.child('role').val())) || (auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin' && $uid != auth.uid)"
       }
     },
     "pets": {
@@ -38,9 +38,10 @@
     },
     "vet_appointments": {
       "$vetId": {
-        ".read": "$vetId == auth.uid",
+        ".read": "auth != null",
         "$appointmentId": {
-          ".write": "data.child('ownerId').val() == auth.uid || newData.child('ownerId').val() == auth.uid || $vetId == auth.uid"
+          ".write": "auth != null && (newData.child('ownerId').val() == auth.uid || $vetId == auth.uid)",
+          ".validate": "newData.hasChildren(['id', 'ownerId', 'petId', 'petName', 'vetId', 'dateTime', 'status'])"
         }
       }
     },

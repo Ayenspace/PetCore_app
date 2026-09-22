@@ -11,6 +11,7 @@ class ReminderProvider extends ChangeNotifier {
   String? _error;
   StreamSubscription? _subscription;
   Timer? _checkTimer;
+  String? _listeningOwnerId;
 
   // Callback set by the UI to show in-app banners
   void Function(ReminderModel)? onReminderDue;
@@ -30,6 +31,8 @@ class ReminderProvider extends ChangeNotifier {
   bool _isOverdue(ReminderModel r) => r.dateTime.isBefore(DateTime.now());
 
   void listenToReminders(String ownerId) {
+    if (_listeningOwnerId == ownerId && _subscription != null) return;
+    _listeningOwnerId = ownerId;
     _subscription?.cancel();
     _subscription = _service.remindersStream(ownerId).listen((list) {
       _reminders = list;

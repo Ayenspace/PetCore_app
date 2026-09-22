@@ -6,6 +6,11 @@ import '../../widgets/admin_navigation.dart';
 import '../../widgets/admin_drawer.dart';
 
 class AdminAppointmentsScreen extends StatelessWidget {
+  static final _appointmentsStream = FirebaseDatabase.instance
+      .ref('appointments')
+      .onValue;
+  static final _usersStream = FirebaseDatabase.instance.ref('users').onValue;
+
   const AdminAppointmentsScreen({super.key});
 
   @override
@@ -15,7 +20,7 @@ class AdminAppointmentsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Appointments')),
       bottomNavigationBar: const AdminNavigation(selectedIndex: 0),
       body: StreamBuilder<DatabaseEvent>(
-        stream: FirebaseDatabase.instance.ref('appointments').onValue,
+        stream: _appointmentsStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Could not load appointments: ${snapshot.error}'));
@@ -41,7 +46,7 @@ class AdminAppointmentsScreen extends StatelessWidget {
           }
 
           return StreamBuilder<DatabaseEvent>(
-            stream: FirebaseDatabase.instance.ref('users').onValue,
+            stream: _usersStream,
             builder: (context, usersSnapshot) {
               if (!usersSnapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());

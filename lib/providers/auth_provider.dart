@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../services/authentication.dart';
@@ -13,6 +14,8 @@ class AppAuthProvider extends ChangeNotifier {
   UserModel? _user;
   String? _error;
   bool _loading = false;
+  Timer? _initializationTimer;
+  StreamSubscription? _authSubscription;
 
   AuthStatus get status => _status;
   UserModel? get user => _user;
@@ -20,19 +23,32 @@ class AppAuthProvider extends ChangeNotifier {
   bool get loading => _loading;
 
   AppAuthProvider() {
-    _service.authStateChanges.listen((firebaseUser) async {
+    _initializationTimer = Timer(const Duration(seconds: 8), () {
+      if (_status != AuthStatus.initial) return;
+      _status = AuthStatus.unauthenticated;
+      notifyListeners();
+    });
+
+    _authSubscription = _service.authStateChanges.listen((firebaseUser) async {
       if (firebaseUser == null) {
         _status = AuthStatus.unauthenticated;
         _user = null;
+        _initializationTimer?.cancel();
       } else {
         try {
-          _user = await _service.getUser(firebaseUser.uid);
+          _user = await _service
+              .getUser(firebaseUser.uid)
+              .timeout(const Duration(seconds: 5));
           _status = AuthStatus.authenticated;
+          _initializationTimer?.cancel();
         } catch (e) {
-          // DB record missing, sign out to avoid broken state
-          await _service.logout();
           _status = AuthStatus.unauthenticated;
           _user = null;
+          _initializationTimer?.cancel();
+          notifyListeners();
+          // Do not block routing while Firebase signs out the invalid session.
+          unawaited(_service.logout());
+          return;
         }
       }
       notifyListeners();
@@ -102,6 +118,13 @@ class AppAuthProvider extends ChangeNotifier {
     } catch (_) {}
   }
 
+  void continueAsSignedOut() {
+    if (_status != AuthStatus.initial) return;
+    _initializationTimer?.cancel();
+    _status = AuthStatus.unauthenticated;
+    notifyListeners();
+  }
+
   Future<bool> resetPassword(String email) async {
     _setLoading(true);
     try {
@@ -124,6 +147,13 @@ class AppAuthProvider extends ChangeNotifier {
   void _setLoading(bool value) {
     _loading = value;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _initializationTimer?.cancel();
+    _authSubscription?.cancel();
+    super.dispose();
   }
 
   String _parseError(dynamic e) {

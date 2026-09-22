@@ -5,6 +5,7 @@ import '../../providers/auth_provider.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
+
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -13,26 +14,14 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigate();
+    Future<void>.delayed(const Duration(seconds: 6), _leaveIfStillLoading);
   }
 
-  Future<void> _navigate() async {
-    await Future.delayed(const Duration(seconds: 2));
+  void _leaveIfStillLoading() {
     if (!mounted) return;
     final auth = context.read<AppAuthProvider>();
-
-    // Wait for Firebase auth state to resolve (moves away from initial)
     if (auth.status == AuthStatus.initial) {
-      await Future.doWhile(() async {
-        await Future.delayed(const Duration(milliseconds: 100));
-        return auth.status == AuthStatus.initial;
-      });
-    }
-
-    if (!mounted) return;
-    if (auth.status == AuthStatus.authenticated) {
-      context.go('/home');
-    } else {
+      auth.continueAsSignedOut();
       context.go('/welcome');
     }
   }

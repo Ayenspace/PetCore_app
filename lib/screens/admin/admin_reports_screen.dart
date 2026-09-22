@@ -8,6 +8,8 @@ import '../../widgets/admin_navigation.dart';
 import '../../widgets/admin_drawer.dart';
 
 class AdminReportsScreen extends StatelessWidget {
+  static final _usersStream = FirebaseDatabase.instance.ref('users').onValue;
+
   const AdminReportsScreen({super.key});
 
   @override
@@ -26,7 +28,7 @@ class AdminReportsScreen extends StatelessWidget {
       ),
       bottomNavigationBar: const AdminNavigation(selectedIndex: 2),
       body: StreamBuilder<DatabaseEvent>(
-        stream: FirebaseDatabase.instance.ref('users').onValue,
+        stream: _usersStream,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(

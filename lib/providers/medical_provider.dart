@@ -10,6 +10,7 @@ class MedicalProvider extends ChangeNotifier {
   bool _loading = false;
   String? _error;
   StreamSubscription? _subscription;
+  String? _listeningOwnerId;
 
   List<MedicalRecord> get records => _records;
   bool get loading => _loading;
@@ -19,6 +20,8 @@ class MedicalProvider extends ChangeNotifier {
       _records.where((r) => r.petId == petId).toList();
 
   void listenToRecords(String ownerId) {
+    if (_listeningOwnerId == ownerId && _subscription != null) return;
+    _listeningOwnerId = ownerId;
     _subscription?.cancel();
     _subscription = _service.recordsStream(ownerId).listen((list) {
       _records = list;
