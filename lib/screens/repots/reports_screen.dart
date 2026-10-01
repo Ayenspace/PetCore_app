@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 
@@ -19,6 +20,7 @@ class ReportsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        leading: context.canPop() ? const BackButton() : null,
         title: const Text(
           'Health Reports',
           style: TextStyle(fontWeight: FontWeight.bold),

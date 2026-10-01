@@ -11,6 +11,7 @@ class MedicalService {
     final newRecord = MedicalRecord(
       id: ref.key!,
       ownerId: record.ownerId,
+      appointmentId: record.appointmentId,
       petId: record.petId,
       petName: record.petName,
       diagnosis: record.diagnosis,

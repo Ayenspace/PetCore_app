@@ -1,6 +1,5 @@
 {
   "rules": {
-    ".read": "auth != null",
     "users": {
       ".read": "auth != null",
       "$uid": {
@@ -15,7 +14,16 @@
     },
     "marketplace": {
       ".read": "auth != null",
-      ".write": "auth != null"
+      "$listingId": {
+        ".write": "auth != null && ((!data.exists() && newData.child('sellerId').val() == auth.uid) || (data.exists() && data.child('sellerId').val() == auth.uid && (!newData.exists() || newData.child('sellerId').val() == data.child('sellerId').val())))"
+      }
+    },
+    "marketplace_orders": {
+      ".read": "auth != null",
+      "$orderId": {
+        ".write": "auth != null && ((!data.exists() && newData.child('buyerId').val() == auth.uid && root.child('marketplace').child(newData.child('listingId').val()).child('sellerId').val() == newData.child('sellerId').val()) || (data.exists() && newData.exists() && data.child('sellerId').val() == auth.uid && newData.child('buyerId').val() == data.child('buyerId').val() && newData.child('sellerId').val() == data.child('sellerId').val() && newData.child('listingId').val() == data.child('listingId').val()))",
+        ".validate": "newData.hasChildren(['id', 'listingId', 'listingTitle', 'sellerId', 'buyerId', 'buyerName', 'quantity', 'status', 'createdAt']) && newData.child('quantity').val() > 0"
+      }
     },
     "weight_history": {
       "$ownerId": {
@@ -40,7 +48,7 @@
       "$vetId": {
         ".read": "auth != null",
         "$appointmentId": {
-          ".write": "auth != null && (newData.child('ownerId').val() == auth.uid || $vetId == auth.uid)",
+          ".write": "auth != null && (newData.child('ownerId').val() == auth.uid || data.child('ownerId').val() == auth.uid || $vetId == auth.uid)",
           ".validate": "newData.hasChildren(['id', 'ownerId', 'petId', 'petName', 'vetId', 'dateTime', 'status'])"
         }
       }
@@ -54,7 +62,9 @@
     "medical_records": {
       "$ownerId": {
         ".read": "$ownerId == auth.uid",
-          ".write": "$ownerId == auth.uid"
+        "$recordId": {
+          ".write": "$ownerId == auth.uid || (auth != null && newData.child('appointmentId').exists() && root.child('appointments').child($ownerId).child(newData.child('appointmentId').val()).child('vetId').val() == auth.uid && root.child('appointments').child($ownerId).child(newData.child('appointmentId').val()).child('petId').val() == newData.child('petId').val())"
+        }
       }
     },
     "vaccinations": {

@@ -1,39 +1,52 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/appointment_model.dart';
+import '../../providers/admin_provider.dart';
 import '../../widgets/admin_navigation.dart';
 import '../../widgets/admin_drawer.dart';
 
-class AdminAppointmentsScreen extends StatelessWidget {
-  static final _appointmentsStream = FirebaseDatabase.instance
-      .ref('appointments')
-      .onValue;
-  static final _usersStream = FirebaseDatabase.instance.ref('users').onValue;
-
+class AdminAppointmentsScreen extends StatefulWidget {
   const AdminAppointmentsScreen({super.key});
 
   @override
+  State<AdminAppointmentsScreen> createState() =>
+      _AdminAppointmentsScreenState();
+}
+
+class _AdminAppointmentsScreenState extends State<AdminAppointmentsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().listen();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final admin = context.watch<AdminProvider>();
+
+    if (!admin.loaded) {
+      return Scaffold(
+        drawer: const AdminDrawer(),
+        appBar: AppBar(title: const Text('Appointments')),
+        bottomNavigationBar: const AdminNavigation(selectedIndex: 0),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final appointments = _appointmentsFrom(admin.appointments)
+      ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
+
+    final ownerNames = _ownerNamesFrom(admin.users);
+
     return Scaffold(
       drawer: const AdminDrawer(),
       appBar: AppBar(title: const Text('Appointments')),
       bottomNavigationBar: const AdminNavigation(selectedIndex: 0),
-      body: StreamBuilder<DatabaseEvent>(
-        stream: _appointmentsStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(child: Text('Could not load appointments: ${snapshot.error}'));
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final appointments = _appointmentsFrom(snapshot.data!.snapshot.value)
-            ..sort((a, b) => a.dateTime.compareTo(b.dateTime));
-
-          if (appointments.isEmpty) {
-            return const Center(
+      body: appointments.isEmpty
+          ? const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -42,76 +55,48 @@ class AdminAppointmentsScreen extends StatelessWidget {
                   Text('No appointments found'),
                 ],
               ),
-            );
-          }
-
-          return StreamBuilder<DatabaseEvent>(
-            stream: _usersStream,
-            builder: (context, usersSnapshot) {
-              if (!usersSnapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              final ownerNames = _ownerNamesFrom(
-                usersSnapshot.data!.snapshot.value,
-              );
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: appointments.length,
-                separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (context, index) {
-                  final appointment = appointments[index];
-                  return _AppointmentTile(
-                    appointment: appointment,
-                    ownerName: ownerNames[appointment.ownerId] ?? 'Unknown owner',
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: appointments.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              itemBuilder: (context, index) {
+                final appointment = appointments[index];
+                return _AppointmentTile(
+                  appointment: appointment,
+                  ownerName:
+                      ownerNames[appointment.ownerId] ?? 'Unknown owner',
+                );
+              },
+            ),
     );
   }
 
-  static List<AppointmentModel> _appointmentsFrom(Object? value) {
-    if (value is! Map) return <AppointmentModel>[];
+  static List<AppointmentModel> _appointmentsFrom(
+      Map<String, dynamic> value) {
     final appointments = <AppointmentModel>[];
-
-    for (final ownerEntry in value.entries) {
-      final ownerAppointments = ownerEntry.value;
-      if (ownerAppointments is! Map) continue;
-      for (final entry in ownerAppointments.entries) {
+    for (final ownerEntry in value.values) {
+      if (ownerEntry is! Map) continue;
+      for (final entry in ownerEntry.entries) {
         if (entry.value is! Map) continue;
         try {
           final data = Map<String, dynamic>.from(
-            (entry.value as Map).map(
-              (key, value) => MapEntry(key.toString(), value),
-            ),
+            (entry.value as Map).map((k, v) => MapEntry(k.toString(), v)),
           );
           appointments.add(AppointmentModel.fromMap(data));
-        } catch (_) {
-          // Ignore malformed legacy records and keep the admin list usable.
-        }
+        } catch (_) {}
       }
     }
     return appointments;
   }
 
-  static Map<String, String> _ownerNamesFrom(Object? value) {
-    if (value is! Map) return <String, String>{};
+  static Map<String, String> _ownerNamesFrom(Map<String, dynamic> usersMap) {
     final names = <String, String>{};
-    for (final entry in value.entries) {
-      if (entry.value is! Map) continue;
-      final data = Map<String, dynamic>.from(
-        (entry.value as Map).map(
-          (key, value) => MapEntry(key.toString(), value),
-        ),
-      );
+    for (final entry in usersMap.entries) {
+      final data = entry.value;
+      if (data is! Map) continue;
       final name = data['name']?.toString().trim();
-      if (name != null && name.isNotEmpty) {
-        names[entry.key.toString()] = name;
-      }
+      if (name != null && name.isNotEmpty) names[entry.key] = name;
     }
     return names;
   }
@@ -137,7 +122,8 @@ class _AppointmentTile extends StatelessWidget {
 
     return Card(
       child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
           backgroundColor: statusColor.withValues(alpha: 0.12),
           child: Icon(Icons.calendar_today_outlined, color: statusColor),
@@ -169,12 +155,12 @@ class _AppointmentTile extends StatelessWidget {
     );
   }
 
-  static String _formatDate(DateTime dateTime) {
-    final day = dateTime.day.toString().padLeft(2, '0');
-    final month = dateTime.month.toString().padLeft(2, '0');
-    final hour = dateTime.hour % 12 == 0 ? 12 : dateTime.hour % 12;
-    final minute = dateTime.minute.toString().padLeft(2, '0');
-    final period = dateTime.hour >= 12 ? 'PM' : 'AM';
-    return '$day/$month/${dateTime.year} at $hour:$minute $period';
+  static String _formatDate(DateTime dt) {
+    final day = dt.day.toString().padLeft(2, '0');
+    final month = dt.month.toString().padLeft(2, '0');
+    final hour = dt.hour % 12 == 0 ? 12 : dt.hour % 12;
+    final minute = dt.minute.toString().padLeft(2, '0');
+    final period = dt.hour >= 12 ? 'PM' : 'AM';
+    return '$day/$month/${dt.year} at $hour:$minute $period';
   }
 }

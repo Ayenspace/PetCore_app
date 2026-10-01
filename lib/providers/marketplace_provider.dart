@@ -57,7 +57,7 @@ class MarketplaceProvider extends ChangeNotifier {
   }
 
   void listenToListings() {
-    _sub?.cancel();
+    if (_sub != null) return; // already listening
     _sub = _service.streamListings().listen((data) {
       _listings = data;
       notifyListeners();
@@ -134,31 +134,17 @@ class MarketplaceProvider extends ChangeNotifier {
     int index,
   ) => _service.uploadListingImage(sellerId, listingId, file, index);
 
-  Future<bool> placeOrder(MarketplaceOrderModel order) async {
+  Future<String?> placeOrder(MarketplaceOrderModel order) async {
     _error = null;
     _setLoading(true);
     try {
-      final success = await _service.addOrder(order);
-      if (success) {
-        final saved = _orders.contains(order)
-            ? _orders.firstWhere(
-                (item) => item.id == order.id,
-                orElse: () => order,
-              )
-            : order;
-        if (!_orders.any(
-          (item) => item.id == saved.id && item.listingId == saved.listingId,
-        )) {
-          _orders.insert(0, saved);
-        }
-        notifyListeners();
-      }
+      await _service.addOrder(order);
       _setLoading(false);
-      return success;
+      return null; // null = success
     } catch (e) {
       _error = 'Failed to place order: $e';
       _setLoading(false);
-      return false;
+      return e.toString();
     }
   }
 

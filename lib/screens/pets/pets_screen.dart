@@ -314,7 +314,17 @@ class _PetFormState extends State<_PetForm> {
       final success = _isEditing
           ? await petProvider.updatePet(pet)
           : await petProvider.addPet(pet);
-      if (success && mounted) context.pop();
+      if (success && mounted) {
+        context.pop();
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              petProvider.error ?? 'Could not save pet information.',
+            ),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(

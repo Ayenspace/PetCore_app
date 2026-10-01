@@ -121,7 +121,7 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
 
     if (appt == null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Edit Appointment')),
+        appBar: AppBar(leading: context.canPop() ? const BackButton() : null, title: const Text('Edit Appointment')),
         body: const Center(child: Text('Appointment not found.')),
       );
     }
@@ -129,7 +129,7 @@ class _EditAppointmentScreenState extends State<EditAppointmentScreen> {
     _initFromAppointment(appt, pets);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Edit Appointment')),
+      appBar: AppBar(leading: context.canPop() ? const BackButton() : null, title: const Text('Edit Appointment')),
       body: SafeArea(
         child: Form(
           key: _formKey,

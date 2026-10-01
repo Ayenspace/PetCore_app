@@ -21,13 +21,13 @@ class AppointmentDetailsScreen extends StatelessWidget {
 
     if (appointment == null) {
       return Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(leading: context.canPop() ? const BackButton() : null),
         body: const Center(child: Text("Appointment not found.")),
       );
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Appointment Details")),
+      appBar: AppBar(leading: context.canPop() ? const BackButton() : null, title: const Text("Appointment Details")),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [

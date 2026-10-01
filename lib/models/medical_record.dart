@@ -1,6 +1,7 @@
 class MedicalRecord {
   final String id;
   final String ownerId;
+  final String? appointmentId;
   final String petId;
   final String petName;
   final String diagnosis;
@@ -14,6 +15,7 @@ class MedicalRecord {
   MedicalRecord({
     required this.id,
     required this.ownerId,
+    this.appointmentId,
     required this.petId,
     required this.petName,
     required this.diagnosis,
@@ -28,6 +30,7 @@ class MedicalRecord {
   factory MedicalRecord.fromMap(Map<String, dynamic> map) => MedicalRecord(
         id: map['id'],
         ownerId: map['ownerId'],
+        appointmentId: map['appointmentId'],
         petId: map['petId'],
         petName: map['petName'],
         diagnosis: map['diagnosis'],
@@ -42,6 +45,7 @@ class MedicalRecord {
   Map<String, dynamic> toMap() => {
         'id': id,
         'ownerId': ownerId,
+        'appointmentId': appointmentId,
         'petId': petId,
         'petName': petName,
         'diagnosis': diagnosis,

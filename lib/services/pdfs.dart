@@ -159,9 +159,10 @@ class PdfService {
           _cell(a.service, font: font),
           _cell(a.vetName, font: font),
           _cell(_fmt(a.dateTime), font: font),
-          _cell(a.status.name, font: font,
-              color: a.status.name == 'upcoming' ? PdfColors.blue700
-                  : a.status.name == 'completed' ? PdfColors.green700
+          _cell(a.effectiveStatus.name, font: font,
+              color: a.effectiveStatus == AppointmentStatus.upcoming ? PdfColors.blue700
+                  : a.effectiveStatus == AppointmentStatus.completed ? PdfColors.green700
+                  : a.effectiveStatus == AppointmentStatus.overdue ? PdfColors.orange700
                   : PdfColors.grey600),
         ])),
       ],

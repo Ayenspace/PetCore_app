@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../providers/admin_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/admin_navigation.dart';
 import '../../widgets/admin_drawer.dart';
@@ -15,7 +16,6 @@ class AdminUsersScreen extends StatefulWidget {
 }
 
 class _AdminUsersScreenState extends State<AdminUsersScreen> {
-  static final _usersStream = FirebaseDatabase.instance.ref('users').onValue;
   final _searchController = TextEditingController();
   String _query = '';
   String? _updatingUserId;
@@ -23,8 +23,11 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   @override
   void initState() {
     super.initState();
-    _searchController.addListener(() {
-      setState(() => _query = _searchController.text.trim().toLowerCase());
+    _searchController.addListener(
+      () => setState(() => _query = _searchController.text.trim().toLowerCase()),
+    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().listen();
     });
   }
 
@@ -37,72 +40,67 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   @override
   Widget build(BuildContext context) {
     final adminId = context.watch<AppAuthProvider>().user?.id;
+    final admin = context.watch<AdminProvider>();
+
+    if (!admin.loaded) {
+      return Scaffold(
+        drawer: const AdminDrawer(),
+        appBar: AppBar(title: const Text('Users')),
+        bottomNavigationBar: const AdminNavigation(selectedIndex: 1),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final users = _usersFrom(admin.users)
+        .where(_matches)
+        .toList()
+      ..sort((a, b) => a.name.compareTo(b.name));
 
     return Scaffold(
       drawer: const AdminDrawer(),
       appBar: AppBar(title: const Text('Users')),
       bottomNavigationBar: const AdminNavigation(selectedIndex: 1),
-      body: StreamBuilder<DatabaseEvent>(
-        stream: _usersStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Could not load users: ${snapshot.error}'),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final users =
-              _usersFrom(
-                  snapshot.data!.snapshot.value,
-                ).where((user) => _matches(user)).toList()
-                ..sort((a, b) => a.name.compareTo(b.name));
-
-          return Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: TextField(
-                  controller: _searchController,
-                  decoration: InputDecoration(
-                    hintText: 'Search by name or email',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _query.isEmpty
-                        ? null
-                        : IconButton(
-                            tooltip: 'Clear search',
-                            icon: const Icon(Icons.clear),
-                            onPressed: _searchController.clear,
-                          ),
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: users.isEmpty
-                    ? const Center(child: Text('No users found.'))
-                    : ListView.separated(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: users.length,
-                        separatorBuilder: (_, _) => const SizedBox(height: 8),
-                        itemBuilder: (context, index) {
-                          final user = users[index];
-                          final isCurrentAdmin = user.id == adminId;
-                          return _UserTile(
-                            user: user,
-                            enabled: !isCurrentAdmin && _updatingUserId == null,
-                            onRoleChanged: (role) => _changeRole(user.id, role),
-                            isUpdating: _updatingUserId == user.id,
-                            isCurrentAdmin: isCurrentAdmin,
-                          );
-                        },
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name or email',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        icon: const Icon(Icons.clear),
+                        onPressed: _searchController.clear,
                       ),
+                border: const OutlineInputBorder(),
               ),
-            ],
-          );
-        },
+            ),
+          ),
+          Expanded(
+            child: users.isEmpty
+                ? const Center(child: Text('No users found.'))
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: users.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final user = users[index];
+                      final isCurrentAdmin = user.id == adminId;
+                      return _UserTile(
+                        user: user,
+                        enabled: !isCurrentAdmin && _updatingUserId == null,
+                        onRoleChanged: (role) => _changeRole(user.id, role),
+                        isUpdating: _updatingUserId == user.id,
+                        isCurrentAdmin: isCurrentAdmin,
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
@@ -118,25 +116,22 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     try {
       await FirebaseDatabase.instance.ref('users/$userId/role').set(role);
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('User role updated.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('User role updated.')));
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Could not update role: $error')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Could not update role: $error')));
     } finally {
       if (mounted) setState(() => _updatingUserId = null);
     }
   }
 
-  static List<_AdminUser> _usersFrom(Object? value) {
-    if (value is! Map) return <_AdminUser>[];
-    return value.entries.map((entry) {
+  static List<_AdminUser> _usersFrom(Map<String, dynamic> usersMap) {
+    return usersMap.entries.map((entry) {
       final data = _asMap(entry.value);
       return _AdminUser(
-        id: entry.key.toString(),
+        id: entry.key,
         name: data['name']?.toString() ?? 'Unnamed user',
         email: data['email']?.toString() ?? 'No email',
         role: data['role']?.toString() ?? 'petOwner',
@@ -145,9 +140,9 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   }
 
   static Map<String, dynamic> _asMap(Object? value) {
-    if (value is! Map) return <String, dynamic>{};
+    if (value is! Map) return {};
     return Map<String, dynamic>.from(
-      value.map((key, value) => MapEntry(key.toString(), value)),
+      value.map((k, v) => MapEntry(k.toString(), v)),
     );
   }
 }
@@ -157,7 +152,6 @@ class _AdminUser {
   final String name;
   final String email;
   final String role;
-
   const _AdminUser({
     required this.id,
     required this.name,
@@ -196,18 +190,13 @@ class _UserTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    user.name,
-                    style: const TextStyle(fontWeight: FontWeight.w600),
-                  ),
+                  Text(user.name,
+                      style: const TextStyle(fontWeight: FontWeight.w600)),
                   Text(user.email, overflow: TextOverflow.ellipsis),
                   if (isCurrentAdmin)
-                    Text(
-                      'Current account',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
+                    Text('Current account',
+                        style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary)),
                 ],
               ),
             ),
@@ -225,9 +214,8 @@ class _UserTile extends StatelessWidget {
                     IconButton(
                       tooltip: 'Preview account',
                       icon: const Icon(Icons.visibility_outlined),
-                      onPressed: () => context.push(
-                        '/admin/users/${user.id}/preview',
-                      ),
+                      onPressed: () =>
+                          context.push('/admin/users/${user.id}/preview'),
                     ),
                   DropdownButton<String>(
                     value: _validRole(user.role),
@@ -238,9 +226,7 @@ class _UserTile extends StatelessWidget {
                         : null,
                     items: const [
                       DropdownMenuItem(
-                        value: 'petOwner',
-                        child: Text('Pet owner'),
-                      ),
+                          value: 'petOwner', child: Text('Pet owner')),
                       DropdownMenuItem(value: 'vet', child: Text('Vet')),
                       DropdownMenuItem(value: 'admin', child: Text('Admin')),
                     ],
@@ -254,8 +240,6 @@ class _UserTile extends StatelessWidget {
   }
 
   static String _validRole(String role) {
-    return const {'petOwner', 'vet', 'admin'}.contains(role)
-        ? role
-        : 'petOwner';
+    return const {'petOwner', 'vet', 'admin'}.contains(role) ? role : 'petOwner';
   }
 }

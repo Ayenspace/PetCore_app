@@ -216,7 +216,7 @@ class _AddAppointmentScreenState extends State<AddAppointmentScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Add Appointment")),
+      appBar: AppBar(leading: context.canPop() ? const BackButton() : null, title: const Text("Add Appointment")),
       body: SafeArea(
         child: Form(
           key: _formKey,

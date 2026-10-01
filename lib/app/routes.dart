@@ -26,6 +26,8 @@ import '../screens/marketplace/add_listing.dart';
 import '../screens/marketplace/my_listings.dart';
 import '../screens/marketplace/listing_details.dart';
 import '../screens/marketplace/edit_listings.dart';
+import '../screens/marketplace/cart_screen.dart';
+import '../screens/marketplace/my_orders_screen.dart';
 import '../screens/profile/profile_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/notifications/notifications_screen.dart';
@@ -199,6 +201,14 @@ class AppRouter {
         GoRoute(
           path: '/marketplace/my-listings',
           builder: (c, s) => const MyListingsScreen(),
+        ),
+        GoRoute(
+          path: '/marketplace/cart',
+          builder: (c, s) => const CartScreen(),
+        ),
+        GoRoute(
+          path: '/marketplace/my-orders',
+          builder: (c, s) => const MyOrdersScreen(),
         ),
         GoRoute(
           path: '/marketplace/:id',

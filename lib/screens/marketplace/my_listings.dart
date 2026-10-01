@@ -306,8 +306,10 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                   size: 20,
                                 ),
                                 tooltip: 'Delete',
-                                onPressed: () =>
-                                    _confirmDelete(context, listing, user!.id),
+                                onPressed: () {
+                                    if (user == null) return;
+                                    _confirmDelete(context, listing, user.id);
+                                  },
                               ),
                             ],
                           ),

@@ -60,6 +60,15 @@ class AppointmentModel {
     'createdAt': createdAt.toIso8601String(),
   };
 
+  /// Real-time status: if stored as upcoming but dateTime has passed,
+  /// returns overdue immediately without waiting for Firebase to update.
+  AppointmentStatus get effectiveStatus {
+    if (status == AppointmentStatus.upcoming && dateTime.isBefore(DateTime.now())) {
+      return AppointmentStatus.overdue;
+    }
+    return status;
+  }
+
   AppointmentModel copyWith({
     String? service,
     String? vetName,

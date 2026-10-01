@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../../models/marketplace_model.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/cart_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/marketplace_provider.dart';
 import '../../widgets/admin_drawer.dart';
@@ -24,6 +25,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
   void initState() {
     super.initState();
     context.read<MarketplaceProvider>().listenToListings();
+    // Wire cart to auth so it clears on logout
+    context.read<CartProvider>().listenToAuth(context.read<AppAuthProvider>());
   }
 
   @override
@@ -46,6 +49,39 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
       appBar: AppBar(
         title: const Text('Marketplace', style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
+          // Cart icon with badge
+          Consumer<CartProvider>(
+            builder: (context, cart, _) => Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.shopping_cart_outlined),
+                  tooltip: 'Cart',
+                  onPressed: () => context.push('/marketplace/cart'),
+                ),
+                if (cart.count > 0)
+                  Positioned(
+                    right: 6,
+                    top: 6,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${cart.count}',
+                        style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.receipt_long_outlined),
+            tooltip: 'My Orders',
+            onPressed: () => context.push('/marketplace/my-orders'),
+          ),
           IconButton(
             icon: const Icon(Icons.storefront_outlined),
             tooltip: 'My Listings',

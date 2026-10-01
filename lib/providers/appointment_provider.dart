@@ -27,14 +27,10 @@ class AppointmentProvider extends ChangeNotifier {
     _subscription?.cancel();
     _subscription = _service.appointmentsStream(ownerId).listen((list) {
       _appointments = list;
+      _markOverdue(ownerId); // check immediately on every stream update
       notifyListeners();
     });
-    _overdueTimer?.cancel();
-    _overdueTimer = Timer.periodic(
-      const Duration(minutes: 1),
-      (_) => _markOverdue(ownerId),
-    );
-    _markOverdue(ownerId);
+    _startOverdueTimer(ownerId);
   }
 
   void listenToVetAppointments(String vetId) {
@@ -45,6 +41,14 @@ class AppointmentProvider extends ChangeNotifier {
       _vetAppointments = list;
       notifyListeners();
     });
+  }
+
+  void _startOverdueTimer(String ownerId) {
+    _overdueTimer?.cancel();
+    _overdueTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _markOverdue(ownerId),
+    );
   }
 
   void _markOverdue(String ownerId) {

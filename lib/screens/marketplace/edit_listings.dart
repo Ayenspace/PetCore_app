@@ -30,6 +30,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
   bool _isAvailable = true;
   bool _saving = false;
   bool _initialized = false;
+  DateTime? _originalCreatedAt;
   List<String> _existingImageUrls = [];
   final List<XFile> _pickedImages = [];
 
@@ -52,6 +53,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
     _category = listing.category;
     _isAvailable = listing.isAvailable;
     _existingImageUrls = List.from(listing.imageUrls);
+    _originalCreatedAt = listing.createdAt;
     _initialized = true;
   }
 
@@ -118,7 +120,7 @@ class _EditListingScreenState extends State<EditListingScreen> {
             ? null
             : _locationController.text.trim(),
         isAvailable: _isAvailable,
-        createdAt: DateTime.now(),
+        createdAt: _originalCreatedAt ?? DateTime.now(),
       );
 
       final success = await provider.updateListing(editedListing);

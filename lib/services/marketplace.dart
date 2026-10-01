@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'package:firebase_database/firebase_database.dart' show DatabaseEvent;
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:rxdart/rxdart.dart';
 import '../models/marketplace_model.dart';
 import '../models/marketplace_order_model.dart';
 import 'firestore.dart';
@@ -63,18 +65,28 @@ class MarketplaceService {
   }
 
   Stream<List<MarketplaceOrderModel>> streamOrders(String userId) {
-    return _db.stream('marketplace_orders').map((event) {
-      final data = event.snapshot.value;
-      if (data == null) return <MarketplaceOrderModel>[];
-      final map = Map<String, dynamic>.from(data as Map);
-      return map.values
-          .map(
-            (v) => MarketplaceOrderModel.fromMap(
-              Map<String, dynamic>.from(v as Map),
-            ),
-          )
-          .where((order) => order.buyerId == userId || order.sellerId == userId)
-          .toList()
+    // Fetch buyer orders and seller orders separately using indexed queries
+    final buyerStream = _db.ref('marketplace_orders')
+        .orderByChild('buyerId')
+        .equalTo(userId)
+        .onValue;
+    final sellerStream = _db.ref('marketplace_orders')
+        .orderByChild('sellerId')
+        .equalTo(userId)
+        .onValue;
+
+    return Rx.combineLatest2(buyerStream, sellerStream, (buyerEvent, sellerEvent) {
+      final Map<String, MarketplaceOrderModel> merged = {};
+      for (final event in [buyerEvent, sellerEvent]) {
+        final data = event.snapshot.value;
+        if (data == null) continue;
+        final map = Map<String, dynamic>.from(data as Map);
+        for (final v in map.values) {
+          final order = MarketplaceOrderModel.fromMap(Map<String, dynamic>.from(v as Map));
+          merged[order.id] = order;
+        }
+      }
+      return merged.values.toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     });
   }
@@ -87,8 +99,10 @@ class MarketplaceService {
       final data = order.copyWith(id: id).toMap();
       await _db.set('marketplace_orders/$id', data);
       return true;
-    } catch (_) {
-      return false;
+    } catch (e, st) {
+      debugPrint('MarketplaceService.addOrder error: $e');
+      debugPrint('$st');
+      rethrow;
     }
   }
 

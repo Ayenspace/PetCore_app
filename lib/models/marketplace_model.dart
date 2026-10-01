@@ -30,18 +30,18 @@ class MarketplaceModel {
   });
 
   factory MarketplaceModel.fromMap(Map<String, dynamic> map) => MarketplaceModel(
-        id: map['id'],
-        sellerId: map['sellerId'],
-        sellerName: map['sellerName'],
-        sellerPhotoUrl: map['sellerPhotoUrl'],
-        title: map['title'],
-        description: map['description'],
-        price: (map['price'] as num).toDouble(),
-        category: ListingCategory.values.byName(map['category']),
+        id: map['id']?.toString() ?? '',
+        sellerId: map['sellerId']?.toString() ?? '',
+        sellerName: map['sellerName']?.toString() ?? 'Unknown',
+        sellerPhotoUrl: map['sellerPhotoUrl']?.toString(),
+        title: map['title']?.toString() ?? 'Untitled',
+        description: map['description']?.toString() ?? '',
+        price: (map['price'] as num?)?.toDouble() ?? 0.0,
+        category: ListingCategory.values.asNameMap()[map['category']?.toString() ?? ''] ?? ListingCategory.other,
         imageUrls: List<String>.from(map['imageUrls'] ?? []),
-        location: map['location'],
+        location: map['location']?.toString(),
         isAvailable: map['isAvailable'] ?? true,
-        createdAt: DateTime.parse(map['createdAt']),
+        createdAt: DateTime.tryParse(map['createdAt']?.toString() ?? '') ?? DateTime.now(),
       );
 
   Map<String, dynamic> toMap() => {

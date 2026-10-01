@@ -1,19 +1,45 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:provider/provider.dart';
 
+import '../../providers/admin_provider.dart';
 import '../../widgets/admin_navigation.dart';
 import '../../widgets/admin_drawer.dart';
 
-class AdminReportsScreen extends StatelessWidget {
-  static final _usersStream = FirebaseDatabase.instance.ref('users').onValue;
-
+class AdminReportsScreen extends StatefulWidget {
   const AdminReportsScreen({super.key});
 
   @override
+  State<AdminReportsScreen> createState() => _AdminReportsScreenState();
+}
+
+class _AdminReportsScreenState extends State<AdminReportsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<AdminProvider>().listen();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final admin = context.watch<AdminProvider>();
+
+    if (!admin.loaded) {
+      return Scaffold(
+        drawer: const AdminDrawer(),
+        appBar: AppBar(title: const Text('Reports')),
+        bottomNavigationBar: const AdminNavigation(selectedIndex: 2),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final counts = _monthlyCounts(admin.users);
+    final total = counts.fold<int>(0, (sum, item) => sum + item.count);
+
     return Scaffold(
       drawer: const AdminDrawer(),
       appBar: AppBar(
@@ -22,70 +48,48 @@ class AdminReportsScreen extends StatelessWidget {
           IconButton(
             tooltip: 'Export report',
             icon: const Icon(Icons.picture_as_pdf_outlined),
-            onPressed: () => _exportReport(context),
+            onPressed: () => _exportReport(context, counts, total),
           ),
         ],
       ),
       bottomNavigationBar: const AdminNavigation(selectedIndex: 2),
-      body: StreamBuilder<DatabaseEvent>(
-        stream: _usersStream,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return Center(
-              child: Text('Could not load reports: ${snapshot.error}'),
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final counts = _monthlyCounts(snapshot.data!.snapshot.value);
-          final total = counts.fold<int>(0, (sum, item) => sum + item.count);
-
-          return ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              Text(
-                'User growth',
-                style: Theme.of(context).textTheme.headlineSmall,
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text('User growth',
+              style: Theme.of(context).textTheme.headlineSmall),
+          const SizedBox(height: 4),
+          Text('New accounts created over the last 12 months.',
+              style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 20),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 20, 12, 12),
+              child: SizedBox(
+                height: 280,
+                child: _UserGrowthChart(counts: counts),
               ),
-              const SizedBox(height: 4),
-              Text(
-                'New accounts created over the last 12 months.',
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 20),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 20, 12, 12),
-                  child: SizedBox(
-                    height: 280,
-                    child: _UserGrowthChart(counts: counts),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.person_add_alt_1_outlined),
-                  title: const Text('New users in the last 12 months'),
-                  trailing: Text(
-                    '$total',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                ),
-              ),
-            ],
-          );
-        },
+            ),
+          ),
+          const SizedBox(height: 16),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.person_add_alt_1_outlined),
+              title: const Text('New users in the last 12 months'),
+              trailing: Text('$total',
+                  style: Theme.of(context).textTheme.headlineSmall),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Future<void> _exportReport(BuildContext context) async {
-    final snapshot = await FirebaseDatabase.instance.ref('users').get();
-    final counts = _monthlyCounts(snapshot.value);
-    final total = counts.fold<int>(0, (sum, item) => sum + item.count);
+  Future<void> _exportReport(
+    BuildContext context,
+    List<_MonthCount> counts,
+    int total,
+  ) async {
     final document = pw.Document();
     final boldFont = pw.Font.helveticaBold();
 
@@ -94,17 +98,13 @@ class AdminReportsScreen extends StatelessWidget {
         pageFormat: PdfPageFormat.a4,
         margin: const pw.EdgeInsets.all(32),
         build: (context) => [
-          pw.Text(
-            'PetCore Admin User Growth Report',
-            style: pw.TextStyle(font: boldFont, fontSize: 20),
-          ),
+          pw.Text('PetCore Admin User Growth Report',
+              style: pw.TextStyle(font: boldFont, fontSize: 20)),
           pw.SizedBox(height: 6),
           pw.Text('Generated ${_formatDate(DateTime.now())}'),
           pw.SizedBox(height: 24),
-          pw.Text(
-            'New users in the last 12 months: $total',
-            style: pw.TextStyle(font: boldFont, fontSize: 13),
-          ),
+          pw.Text('New users in the last 12 months: $total',
+              style: pw.TextStyle(font: boldFont, fontSize: 13)),
           pw.SizedBox(height: 12),
           pw.Table.fromTextArray(
             headers: const ['Month', 'New users'],
@@ -113,7 +113,8 @@ class AdminReportsScreen extends StatelessWidget {
                 [_monthLabel(item.month), item.count.toString()],
             ],
             headerStyle: pw.TextStyle(font: boldFont),
-            headerDecoration: const pw.BoxDecoration(color: PdfColors.grey300),
+            headerDecoration:
+                const pw.BoxDecoration(color: PdfColors.grey300),
             cellPadding: const pw.EdgeInsets.all(8),
           ),
         ],
@@ -133,45 +134,16 @@ class AdminReportsScreen extends StatelessWidget {
     }
   }
 
-  static String _formatDate(DateTime date) {
-    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-  }
-
-  static String _monthLabel(DateTime date) {
-    const labels = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
-    ];
-    return '${labels[date.month - 1]} ${date.year}';
-  }
-
-  static List<_MonthCount> _monthlyCounts(Object? value) {
+  static List<_MonthCount> _monthlyCounts(Map<String, dynamic> usersMap) {
     final now = DateTime.now();
-    final months = List.generate(
-      12,
-      (index) => DateTime(now.year, now.month - 11 + index),
-    );
+    final months =
+        List.generate(12, (i) => DateTime(now.year, now.month - 11 + i));
     final counts = List.filled(12, 0);
-    if (value is! Map) {
-      return [for (var i = 0; i < 12; i++) _MonthCount(months[i], counts[i])];
-    }
 
-    for (final entry in value.entries) {
-      if (entry.value is! Map) continue;
+    for (final entry in usersMap.values) {
+      if (entry is! Map) continue;
       final data = Map<String, dynamic>.from(
-        (entry.value as Map).map(
-          (key, value) => MapEntry(key.toString(), value),
-        ),
+        (entry).map((k, v) => MapEntry(k.toString(), v)),
       );
       final rawDate = data['createdAt']?.toString();
       if (rawDate == null) continue;
@@ -188,18 +160,27 @@ class AdminReportsScreen extends StatelessWidget {
 
     return [for (var i = 0; i < 12; i++) _MonthCount(months[i], counts[i])];
   }
+
+  static String _formatDate(DateTime date) =>
+      '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  static String _monthLabel(DateTime date) {
+    const labels = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+    ];
+    return '${labels[date.month - 1]} ${date.year}';
+  }
 }
 
 class _MonthCount {
   final DateTime month;
   final int count;
-
   const _MonthCount(this.month, this.count);
 }
 
 class _UserGrowthChart extends StatelessWidget {
   final List<_MonthCount> counts;
-
   const _UserGrowthChart({required this.counts});
 
   @override
@@ -234,10 +215,8 @@ class _UserGrowthPainter extends CustomPainter {
     const chartRight = 8.0;
     final chartHeight = size.height - chartTop - chartBottom;
     final chartWidth = size.width - chartLeft - chartRight;
-    final maxCount = counts.fold<int>(
-      0,
-      (max, item) => item.count > max ? item.count : max,
-    );
+    final maxCount =
+        counts.fold<int>(0, (max, item) => item.count > max ? item.count : max);
     final scale = maxCount == 0 ? 1.0 : maxCount.toDouble();
     final slotWidth = chartWidth / counts.length;
     final barWidth = slotWidth * 0.56;
@@ -247,18 +226,12 @@ class _UserGrowthPainter extends CustomPainter {
       ..strokeWidth = 1;
     final textStyle = TextStyle(color: labelColor, fontSize: 10);
     final valueStyle = TextStyle(
-      color: labelColor,
-      fontSize: 10,
-      fontWeight: FontWeight.w600,
-    );
+        color: labelColor, fontSize: 10, fontWeight: FontWeight.w600);
 
     for (var line = 0; line <= 4; line++) {
       final y = chartTop + chartHeight * (line / 4);
       canvas.drawLine(
-        Offset(chartLeft, y),
-        Offset(size.width - chartRight, y),
-        linePaint,
-      );
+          Offset(chartLeft, y), Offset(size.width - chartRight, y), linePaint);
     }
 
     for (var index = 0; index < counts.length; index++) {
@@ -268,55 +241,32 @@ class _UserGrowthPainter extends CustomPainter {
       final y = chartTop + chartHeight - barHeight;
       canvas.drawRRect(
         RRect.fromRectAndRadius(
-          Rect.fromLTWH(x, y, barWidth, barHeight),
-          const Radius.circular(4),
-        ),
+            Rect.fromLTWH(x, y, barWidth, barHeight), const Radius.circular(4)),
         barPaint,
       );
       if (item.count > 0) {
-        _drawText(
-          canvas,
-          '${item.count}',
-          Offset(x + barWidth / 2, y - 14),
-          valueStyle,
-          centered: true,
-        );
+        _drawText(canvas, '${item.count}', Offset(x + barWidth / 2, y - 14),
+            valueStyle, centered: true);
       }
       _drawText(
-        canvas,
-        _monthLabel(item.month),
-        Offset(x + barWidth / 2, size.height - 22),
-        textStyle,
-        centered: true,
-      );
+          canvas,
+          _monthLabel(item.month),
+          Offset(x + barWidth / 2, size.height - 22),
+          textStyle,
+          centered: true);
     }
   }
 
   static String _monthLabel(DateTime date) {
     const labels = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
     ];
     return labels[date.month - 1];
   }
 
-  static void _drawText(
-    Canvas canvas,
-    String text,
-    Offset center,
-    TextStyle style, {
-    required bool centered,
-  }) {
+  static void _drawText(Canvas canvas, String text, Offset center,
+      TextStyle style, {required bool centered}) {
     final painter = TextPainter(
       text: TextSpan(text: text, style: style),
       textDirection: TextDirection.ltr,
@@ -328,7 +278,6 @@ class _UserGrowthPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _UserGrowthPainter oldDelegate) {
-    return oldDelegate.counts != counts || oldDelegate.barColor != barColor;
-  }
+  bool shouldRepaint(covariant _UserGrowthPainter old) =>
+      old.counts != counts || old.barColor != barColor;
 }

@@ -37,11 +37,15 @@ class PetProvider extends ChangeNotifier {
         _pets.add(newPet);
         _pets.sort((a, b) => a.name.compareTo(b.name));
       }
-      await _weightService.recordIfChanged(
-        newPet.ownerId,
-        newPet.id,
-        newPet.weight,
-      );
+      try {
+        await _weightService.recordIfChanged(
+          newPet.ownerId,
+          newPet.id,
+          newPet.weight,
+        );
+      } catch (e) {
+        debugPrint('PetProvider.addPet weight history failed: $e');
+      }
       _error = null;
       return true;
     } catch (e) {
@@ -58,7 +62,11 @@ class PetProvider extends ChangeNotifier {
       await _service.updatePet(pet);
       final index = _pets.indexWhere((p) => p.id == pet.id);
       if (index != -1) _pets[index] = pet;
-      await _weightService.recordIfChanged(pet.ownerId, pet.id, pet.weight);
+      try {
+        await _weightService.recordIfChanged(pet.ownerId, pet.id, pet.weight);
+      } catch (e) {
+        debugPrint('PetProvider.updatePet weight history failed: $e');
+      }
       _error = null;
       return true;
     } catch (e) {

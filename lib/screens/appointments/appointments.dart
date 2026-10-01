@@ -96,11 +96,11 @@ class _AppointmentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final statusColor = appointment.status == AppointmentStatus.upcoming
+    final statusColor = appointment.effectiveStatus == AppointmentStatus.upcoming
         ? Colors.blue
-        : appointment.status == AppointmentStatus.completed
+        : appointment.effectiveStatus == AppointmentStatus.completed
         ? Colors.green
-        : appointment.status == AppointmentStatus.overdue
+        : appointment.effectiveStatus == AppointmentStatus.overdue
         ? Colors.orange
         : Colors.red;
 
@@ -142,7 +142,7 @@ class _AppointmentCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              appointment.status.name,
+              appointment.effectiveStatus.name,
               style: TextStyle(
                 color: statusColor,
                 fontSize: 12,

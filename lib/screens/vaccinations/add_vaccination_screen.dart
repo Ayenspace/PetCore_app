@@ -144,6 +144,7 @@ class _AddVaccinationScreenState extends State<AddVaccinationScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: context.canPop() ? const BackButton() : null,
         title: const Text('Add Vaccination', style: TextStyle(fontWeight: FontWeight.bold)),
       ),
       body: SingleChildScrollView(

@@ -61,6 +61,7 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
     final record = MedicalRecord(
       id: '',
       ownerId: appointment?.ownerId ?? user.id,
+      appointmentId: appointment?.id,
       petId: appointment?.petId ?? _selectedPet!.id,
       petName: appointment?.petName ?? _selectedPet!.name,
       diagnosis: _diagnosisController.text.trim(),
@@ -84,6 +85,7 @@ class _AddMedicalRecordScreenState extends State<AddMedicalRecordScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: context.canPop() ? const BackButton() : null,
         title: const Text(
           'Add Medical Record',
           style: TextStyle(fontWeight: FontWeight.bold),
