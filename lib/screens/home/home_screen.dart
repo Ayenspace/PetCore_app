@@ -373,22 +373,31 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           )
         else
-          SizedBox(
-            height: 120,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: pets.length + 1,
-              itemBuilder: (context, i) {
-                if (i == pets.length) {
-                  return _AddPetCard(onTap: () => context.push('/pets/add'));
-                }
-                return _PetCarouselCard(
-                  pet: pets[i],
-                  onTap: () => context.push('/pets/${pets[i].id}'),
-                );
-              },
-            ),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final cardWidth = (constraints.maxWidth * 0.22).clamp(80.0, 110.0);
+              return SizedBox(
+                height: cardWidth * 1.3,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: pets.length + 1,
+                  itemBuilder: (context, i) {
+                    if (i == pets.length) {
+                      return _AddPetCard(
+                        width: cardWidth,
+                        onTap: () => context.push('/pets/add'),
+                      );
+                    }
+                    return _PetCarouselCard(
+                      pet: pets[i],
+                      width: cardWidth,
+                      onTap: () => context.push('/pets/${pets[i].id}'),
+                    );
+                  },
+                ),
+              );
+            },
           ),
       ],
     );
@@ -536,7 +545,10 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Theme.of(context).cardColor,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Row(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final barW = (constraints.maxWidth / months.length * 0.45).clamp(12.0, 32.0);
+                return Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: List.generate(months.length, (index) {
@@ -554,7 +566,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      width: 22,
+                      width: barW,
                       height: height,
                       decoration: BoxDecoration(
                         color: Theme.of(context).colorScheme.primary,
@@ -572,6 +584,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 );
               }),
+                );
+              },
             ),
           ),
         ],
@@ -638,14 +652,19 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GridView.count(
-        crossAxisCount: 3,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        childAspectRatio: 1,
-        children: actions.map((a) => _QuickActionCard(action: a)).toList(),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final cols = constraints.maxWidth > 500 ? 6 : 3;
+          return GridView.count(
+            crossAxisCount: cols,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 10,
+            mainAxisSpacing: 10,
+            childAspectRatio: constraints.maxWidth > 500 ? 1.1 : 0.95,
+            children: actions.map((a) => _QuickActionCard(action: a)).toList(),
+          );
+        },
       ),
     );
   }
@@ -755,15 +774,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _PetCarouselCard extends StatelessWidget {
   final PetModel pet;
+  final double width;
   final VoidCallback onTap;
-  const _PetCarouselCard({required this.pet, required this.onTap});
+  const _PetCarouselCard({required this.pet, required this.width, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 90,
+        width: width,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           color: Colors.white,
@@ -811,15 +831,16 @@ class _PetCarouselCard extends StatelessWidget {
 }
 
 class _AddPetCard extends StatelessWidget {
+  final double width;
   final VoidCallback onTap;
-  const _AddPetCard({required this.onTap});
+  const _AddPetCard({required this.width, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 90,
+        width: width,
         margin: const EdgeInsets.only(right: 12),
         decoration: BoxDecoration(
           color: const Color(0xFF6A1B9A).withValues(alpha: 0.06),

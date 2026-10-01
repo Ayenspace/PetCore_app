@@ -77,15 +77,18 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AppAuthProvider>();
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       backgroundColor: const Color(0xFF6A1B9A),
-      body: Column(
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmall = constraints.maxHeight < 600;
+          final topFraction = isSmall ? 0.35 : 0.42;
+          return Column(
         children: [
           // ── Top illustrated half ──────────────────────────────────────
           SizedBox(
-            height: size.height * 0.42,
+            height: constraints.maxHeight * topFraction,
             width: double.infinity,
             child: Stack(
               children: [
@@ -151,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
               ),
               child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(28, 32, 28, 24),
+                padding: EdgeInsets.fromLTRB(28, isSmall ? 20 : 32, 28, 24),
                 child: FadeTransition(
                   opacity: _fadeIn,
                   child: Form(
@@ -299,6 +302,8 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
             ),
           ),
         ],
+        );
+        },
       ),
     );
   }
